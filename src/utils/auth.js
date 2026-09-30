@@ -6,7 +6,7 @@ const { SELECTORS, UI_TEXT } = require('../../config/constants');
  * @returns {Promise<void>} Resolves when both popups are closed.
  */
 async function dismissPopups(page) {
-  await page.getByRole('button', { name: UI_TEXT.dismissButton }).click();
+  await page.getByRole('button', { name: UI_TEXT.welcomeCloseButton }).click();
   await page.getByRole('button', { name: UI_TEXT.cookieButton }).click();
 }
 

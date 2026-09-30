@@ -19,6 +19,17 @@ const TEST_EMAIL = {
   domain: 'example.com',
 };
 
+/** Application routes. */
+const ROUTES = {
+  home: '/',
+};
+
+/** Timeouts in milliseconds. */
+const TIMEOUTS = {
+  test: 30000,
+  expect: 5000,
+};
+
 /** API endpoints. */
 const API_PATHS = {
   users: '/api/Users',
@@ -36,17 +47,18 @@ const SELECTORS = {
   productCard: 'mat-card',
 };
 
-/** Visible names of buttons, labels and headings. */
+/** Accessible names of buttons, labels and visible headings. */
 const UI_TEXT = {
   appHeading: 'OWASP Juice Shop',
-  dismissButton: 'Dismiss',
-  cookieButton: 'Me want it!',
+  welcomeCloseButton: 'Close Welcome Banner',
+  cookieButton: 'dismiss cookie message',
   emailLabel: 'Email',
   passwordLabel: 'Password',
   loginButton: 'Log in',
   addToBasketButton: 'Add to Basket',
   basketButton: 'Your Basket',
   checkoutButton: 'Checkout',
+  homeButton: 'Back to homepage',
 };
 
 /** Expected messages shown by the application. */
@@ -62,6 +74,8 @@ module.exports = {
   TEST_USER_PASSWORD,
   WRONG_PASSWORD,
   TEST_EMAIL,
+  ROUTES,
+  TIMEOUTS,
   API_PATHS,
   HTTP_STATUS,
   SELECTORS,
