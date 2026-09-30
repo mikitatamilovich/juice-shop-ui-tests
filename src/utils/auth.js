@@ -1,4 +1,5 @@
-const { SELECTORS, UI_TEXT } = require('../../config/constants');
+const { ROUTES, SELECTORS, UI_TEXT } = require('../../config/constants');
+const { requireValue } = require('./validate');
 
 /**
  * Dismisses the welcome banner and the cookie consent popups.
@@ -11,12 +12,21 @@ async function dismissPopups(page) {
 }
 
 /**
+ * Opens the Account menu in the toolbar.
+ * @param {import('@playwright/test').Page} page - Playwright page object.
+ * @returns {Promise<void>} Resolves after the menu button is clicked.
+ */
+async function openAccountMenu(page) {
+  await page.locator(SELECTORS.accountMenu).click();
+}
+
+/**
  * Opens the login form via Account -> Login.
  * @param {import('@playwright/test').Page} page - Playwright page object.
  * @returns {Promise<void>} Resolves when the login form is opened.
  */
 async function openLoginForm(page) {
-  await page.locator(SELECTORS.accountMenu).click();
+  await openAccountMenu(page);
   await page.locator(SELECTORS.loginMenuItem).click();
 }
 
@@ -28,25 +38,52 @@ async function openLoginForm(page) {
  * @returns {Promise<void>} Resolves when both fields are filled.
  */
 async function fillLoginForm(page, email, password) {
-  await page.getByLabel(UI_TEXT.emailLabel).fill(email);
-  await page.getByLabel(UI_TEXT.passwordLabel).fill(password);
+  await page.locator(SELECTORS.emailInput).fill(email);
+  await page.locator(SELECTORS.passwordInput).fill(password);
 }
 
 /**
- * Logs in through the Account menu.
+ * Submits the login form.
+ * @param {import('@playwright/test').Page} page - Playwright page object.
+ * @returns {Promise<void>} Resolves after the submit button is clicked.
+ */
+async function submitLoginForm(page) {
+  await page.locator(SELECTORS.loginSubmit).click();
+}
+
+/**
+ * Waits until the application redirects to the search page after a successful login.
+ * @param {import('@playwright/test').Page} page - Playwright page object.
+ * @returns {Promise<void>} Resolves when the redirect is finished.
+ */
+async function waitForLoginRedirect(page) {
+  await page.waitForURL(new RegExp(ROUTES.search));
+}
+
+/**
+ * Logs in through the Account menu and waits for the redirect.
  * @param {import('@playwright/test').Page} page - Playwright page object.
  * @param {string} email - User email.
  * @param {string} password - User password.
- * @returns {Promise<void>} Resolves after the login form is submitted.
+ * @returns {Promise<void>} Resolves after the login is complete.
  * @throws {Error} If email or password is empty.
  */
 async function login(page, email, password) {
-  if (!email || !password) {
-    throw new Error('Email and password must be provided');
-  }
+  requireValue(email, 'Email');
+  requireValue(password, 'Password');
+
   await openLoginForm(page);
   await fillLoginForm(page, email, password);
-  await page.getByRole('button', { name: UI_TEXT.loginButton }).click();
+  await submitLoginForm(page);
+  await waitForLoginRedirect(page);
 }
 
-module.exports = { dismissPopups, openLoginForm, fillLoginForm, login };
+module.exports = {
+  dismissPopups,
+  openAccountMenu,
+  openLoginForm,
+  fillLoginForm,
+  submitLoginForm,
+  waitForLoginRedirect,
+  login,
+};

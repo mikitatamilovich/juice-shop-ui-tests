@@ -24,4 +24,20 @@ async function openBasket(page) {
   await page.getByRole('button', { name: UI_TEXT.basketButton }).click();
 }
 
-module.exports = { addProductToBasket, openBasket };
+/**
+ * Removes the given product from the basket page.
+ * The remove button is the last button in the product row.
+ * @param {import('@playwright/test').Page} page - Playwright page object.
+ * @param {string} productName - Product name as shown in the basket.
+ * @returns {Promise<void>} Resolves after the remove button is clicked.
+ * @throws {Error} If the product name is empty.
+ */
+async function removeProductFromBasket(page, productName) {
+  if (!productName) {
+    throw new Error('Product name must be provided');
+  }
+  const row = page.locator(SELECTORS.basketRow).filter({ hasText: productName });
+  await row.getByRole('button').last().click();
+}
+
+module.exports = { addProductToBasket, openBasket, removeProductFromBasket };

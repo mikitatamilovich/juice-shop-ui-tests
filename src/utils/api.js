@@ -6,13 +6,14 @@ const {
   TEST_USER_PASSWORD,
 } = require('../../config/constants');
 const { NetworkError } = require('./errors');
+const { requireValue } = require('./validate');
 
 /**
  * Builds a unique email so every test works with its own user.
  * @returns {string} Unique email address.
  */
 function buildUniqueEmail() {
-  const suffix = randomUUID().slice(0, 8);
+  const suffix = randomUUID().slice(0, TEST_EMAIL.suffixLength);
   return `${TEST_EMAIL.prefix}.${suffix}@${TEST_EMAIL.domain}`;
 }
 
@@ -26,9 +27,9 @@ function buildUniqueEmail() {
  * @throws {NetworkError} If the API does not respond with 201.
  */
 async function registerUser(request, email, password) {
-  if (!email || !password) {
-    throw new Error('Email and password must be provided');
-  }
+  requireValue(email, 'Email');
+  requireValue(password, 'Password');
+
   const response = await request.post(API_PATHS.users, {
     data: { email, password, passwordRepeat: password },
   });
