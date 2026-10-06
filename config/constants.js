@@ -43,11 +43,10 @@ const HTTP_STATUS = {
   created: 201,
 };
 
-/** CSS selectors for elements without a good accessible name. */
+/** CSS selectors for elements without a stable accessible name. */
 const SELECTORS = {
   accountMenu: '#navbarAccount',
   loginMenuItem: '#navbarLoginButton',
-  emailInput: '#email',
   passwordInput: '#password',
   passwordToggle: 'mat-form-field:has(#password) button',
   loginSubmit: '#loginButton',
@@ -59,13 +58,14 @@ const SELECTORS = {
   totalPrice: '#price',
 };
 
-/** Accessible names of buttons and visible texts. */
+/** Accessible names of buttons, labels and visible texts. */
 const UI_TEXT = {
   welcomeCloseButton: 'Close Welcome Banner',
   cookieButton: 'dismiss cookie message',
   homeButton: 'Back to homepage',
   profileMenuItem: 'Go to user profile',
   appHeading: 'OWASP Juice Shop',
+  emailLabel: 'Email',
   addToBasketButton: 'Add to Basket',
   basketButton: 'Show the shopping cart',
   checkoutButton: 'Checkout',
@@ -104,6 +104,11 @@ const ATTRIBUTES = {
   type: 'type',
 };
 
+/** Keyboard keys used by the tests. */
+const KEYS = {
+  enter: 'Enter',
+};
+
 /** Replaces empty strings for zero hardcode compliance. */
 const EMPTY_VALUE = '';
 
@@ -124,5 +129,6 @@ module.exports = {
   EXPECTED,
   INPUT_TYPE,
   ATTRIBUTES,
+  KEYS,
   EMPTY_VALUE,
 };

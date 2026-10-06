@@ -1,4 +1,5 @@
 const { SELECTORS, UI_TEXT } = require('../../config/constants');
+const { requireValue } = require('./validate');
 
 /**
  * Clicks Add to Basket on the card of the given product.
@@ -8,9 +9,7 @@ const { SELECTORS, UI_TEXT } = require('../../config/constants');
  * @throws {Error} If the product name is empty.
  */
 async function addProductToBasket(page, productName) {
-  if (!productName) {
-    throw new Error('Product name must be provided');
-  }
+  requireValue(productName, 'Product name');
   const product = page.locator(SELECTORS.productCard).filter({ hasText: productName });
   await product.getByRole('button', { name: UI_TEXT.addToBasketButton }).click();
 }
@@ -33,9 +32,7 @@ async function openBasket(page) {
  * @throws {Error} If the product name is empty.
  */
 async function removeProductFromBasket(page, productName) {
-  if (!productName) {
-    throw new Error('Product name must be provided');
-  }
+  requireValue(productName, 'Product name');
   const row = page.locator(SELECTORS.basketRow).filter({ hasText: productName });
   await row.getByRole('button').last().click();
 }

@@ -56,6 +56,17 @@ async function expectPasswordInputType(page, type) {
 }
 
 /**
+ * Checks that the application header is shown with the app name.
+ * @param {import('@playwright/test').Page} page - Playwright page object.
+ * @returns {Promise<void>} Resolves when both checks pass.
+ */
+async function expectAppLoaded(page) {
+  const homeButton = page.getByRole('button', { name: UI_TEXT.homeButton });
+  await expect(homeButton).toBeVisible();
+  await expect(homeButton).toContainText(UI_TEXT.appHeading);
+}
+
+/**
  * Checks that neither the welcome banner nor the cookie banner is shown.
  * @param {import('@playwright/test').Page} page - Playwright page object.
  * @returns {Promise<void>} Resolves when all checks pass.
@@ -177,6 +188,7 @@ module.exports = {
   expectLoginDisabled,
   expectEmptyEmailBlocked,
   expectPasswordInputType,
+  expectAppLoaded,
   expectPopupsHidden,
   expectProductCardsShown,
   expectSearchResultsCount,

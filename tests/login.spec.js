@@ -3,7 +3,6 @@ const {
   EMPTY_VALUE,
   INPUT_TYPE,
   ROUTES,
-  SELECTORS,
   TEST_USER_PASSWORD,
   WRONG_PASSWORD,
 } = require('../config/constants');
@@ -11,10 +10,11 @@ const { buildUniqueEmail, createTestUser } = require('../src/utils/api');
 const {
   dismissPopups,
   fillLoginForm,
-  login,
   openAccountMenu,
   openLoginForm,
   submitLoginForm,
+  togglePasswordVisibility,
+  waitForLoginRedirect,
 } = require('../src/utils/auth');
 const {
   expectEmptyEmailBlocked,
@@ -24,16 +24,38 @@ const {
   expectPasswordInputType,
 } = require('../src/utils/asserts');
 
-const INVALID_LOGIN_CASES = [
+const LOGIN_CASES = [
+  {
+    title: 'valid credentials',
+    getEmail: (user) => user.email,
+    password: TEST_USER_PASSWORD,
+    shouldSubmit: true,
+    verify: async (page, user) => {
+      await waitForLoginRedirect(page);
+      await openAccountMenu(page);
+      await expectLoggedIn(page, user.email);
+    },
+  },
   {
     title: 'wrong password',
     getEmail: (user) => user.email,
     password: WRONG_PASSWORD,
+    shouldSubmit: true,
+    verify: (page) => expectInvalidLogin(page),
   },
   {
     title: 'non-existing email',
     getEmail: () => buildUniqueEmail(),
     password: TEST_USER_PASSWORD,
+    shouldSubmit: true,
+    verify: (page) => expectInvalidLogin(page),
+  },
+  {
+    title: 'empty email',
+    getEmail: () => EMPTY_VALUE,
+    password: TEST_USER_PASSWORD,
+    shouldSubmit: false,
+    verify: (page) => expectEmptyEmailBlocked(page),
   },
 ];
 
@@ -42,28 +64,17 @@ test.beforeEach(async ({ page }) => {
   await dismissPopups(page);
 });
 
-test('should log in with valid credentials', async ({ page, request }) => {
-  const user = await createTestUser(request);
-  await login(page, user.email, user.password);
-  await openAccountMenu(page);
-  await expectLoggedIn(page, user.email);
-});
-
-for (const { title, getEmail, password } of INVALID_LOGIN_CASES) {
-  test(`should reject login: ${title}`, async ({ page, request }) => {
+for (const { title, getEmail, password, shouldSubmit, verify } of LOGIN_CASES) {
+  test(`should handle login: ${title}`, async ({ page, request }) => {
     const user = await createTestUser(request);
     await openLoginForm(page);
     await fillLoginForm(page, getEmail(user), password);
-    await submitLoginForm(page);
-    await expectInvalidLogin(page);
+    if (shouldSubmit) {
+      await submitLoginForm(page);
+    }
+    await verify(page, user);
   });
 }
-
-test('should block login with empty email', async ({ page }) => {
-  await openLoginForm(page);
-  await fillLoginForm(page, EMPTY_VALUE, TEST_USER_PASSWORD);
-  await expectEmptyEmailBlocked(page);
-});
 
 test('should block login with empty password', async ({ page, request }) => {
   const user = await createTestUser(request);
@@ -76,6 +87,6 @@ test('should mask password and allow showing it', async ({ page }) => {
   await openLoginForm(page);
   await fillLoginForm(page, EMPTY_VALUE, TEST_USER_PASSWORD);
   await expectPasswordInputType(page, INPUT_TYPE.hidden);
-  await page.locator(SELECTORS.passwordToggle).click();
+  await togglePasswordVisibility(page);
   await expectPasswordInputType(page, INPUT_TYPE.visible);
 });

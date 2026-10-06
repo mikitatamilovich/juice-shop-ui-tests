@@ -1,4 +1,5 @@
-const { SELECTORS } = require('../../config/constants');
+const { KEYS, SELECTORS } = require('../../config/constants');
+const { requireValue } = require('./validate');
 
 /**
  * Searches for a product using the search bar in the toolbar.
@@ -8,12 +9,10 @@ const { SELECTORS } = require('../../config/constants');
  * @throws {Error} If the query is empty.
  */
 async function searchProduct(page, query) {
-  if (!query) {
-    throw new Error('Search query must be provided');
-  }
+  requireValue(query, 'Search query');
   await page.locator(SELECTORS.searchIcon).click();
   await page.locator(SELECTORS.searchInput).fill(query);
-  await page.locator(SELECTORS.searchInput).press('Enter');
+  await page.locator(SELECTORS.searchInput).press(KEYS.enter);
 }
 
 module.exports = { searchProduct };

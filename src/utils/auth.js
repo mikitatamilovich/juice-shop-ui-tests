@@ -38,7 +38,7 @@ async function openLoginForm(page) {
  * @returns {Promise<void>} Resolves when both fields are filled.
  */
 async function fillLoginForm(page, email, password) {
-  await page.locator(SELECTORS.emailInput).fill(email);
+  await page.getByLabel(UI_TEXT.emailLabel).fill(email);
   await page.locator(SELECTORS.passwordInput).fill(password);
 }
 
@@ -49,6 +49,15 @@ async function fillLoginForm(page, email, password) {
  */
 async function submitLoginForm(page) {
   await page.locator(SELECTORS.loginSubmit).click();
+}
+
+/**
+ * Clicks the "show/hide password" button.
+ * @param {import('@playwright/test').Page} page - Playwright page object.
+ * @returns {Promise<void>} Resolves after the click.
+ */
+async function togglePasswordVisibility(page) {
+  await page.locator(SELECTORS.passwordToggle).click();
 }
 
 /**
@@ -71,7 +80,6 @@ async function waitForLoginRedirect(page) {
 async function login(page, email, password) {
   requireValue(email, 'Email');
   requireValue(password, 'Password');
-
   await openLoginForm(page);
   await fillLoginForm(page, email, password);
   await submitLoginForm(page);
@@ -84,6 +92,7 @@ module.exports = {
   openLoginForm,
   fillLoginForm,
   submitLoginForm,
+  togglePasswordVisibility,
   waitForLoginRedirect,
   login,
 };
