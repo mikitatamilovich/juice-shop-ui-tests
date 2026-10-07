@@ -1,21 +1,19 @@
 {
   "name": "juice-shop-ui-tests",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Playwright UI tests for OWASP Juice Shop",
   "scripts": {
     "test": "playwright test",
     "lint": "eslint . --max-warnings=0",
     "format": "prettier --write ."
   },
   "keywords": [],
-  "author": "",
+  "author": "mikitatamilovich",
   "license": "ISC",
   "type": "commonjs",
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.63.0",
-    "@types/node": "^26.6.3",
     "dotenv": "^18.0.5",
     "eslint": "^10.11.0",
     "eslint-config-prettier": "^10.1.8",
