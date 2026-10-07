@@ -1,10 +1,10 @@
-require('dotenv').config();
+require('dotenv').config({ quiet: true });
 const { getRequiredEnv } = require('../src/utils/env');
 
 /** Base URL of the application under test. */
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 
-/** Product used in the basket scenarios (name as shown on the card). */
+/** Product used in the basket and search scenarios (name as shown on the card). */
 const PRODUCT_NAME = 'Apple Juice (1000ml)';
 
 /** Password for generated test users, taken from the .env file. */
@@ -43,32 +43,32 @@ const HTTP_STATUS = {
   created: 201,
 };
 
-/** CSS selectors for elements without a stable accessible name. */
+/** CSS selectors, used only for elements without an accessible name in Angular Material. */
 const SELECTORS = {
-  accountMenu: '#navbarAccount',
-  loginMenuItem: '#navbarLoginButton',
-  passwordInput: '#password',
-  passwordToggle: 'mat-form-field:has(#password) button',
-  loginSubmit: '#loginButton',
-  searchIcon: '#searchQuery',
+  /** The search input has no accessible name (role "textbox" is ambiguous). */
   searchInput: 'app-mat-search-bar input',
-  productCard: 'mat-card',
+  /** The snack-bar container has no stable role. */
   snackBar: 'simple-snack-bar',
-  basketRow: 'mat-row',
-  totalPrice: '#price',
 };
 
-/** Accessible names of buttons, labels and visible texts. */
+/** Accessible names (strings or name patterns) of buttons, fields and visible texts. */
 const UI_TEXT = {
   welcomeCloseButton: 'Close Welcome Banner',
   cookieButton: 'dismiss cookie message',
   homeButton: 'Back to homepage',
   profileMenuItem: 'Go to user profile',
   appHeading: 'OWASP Juice Shop',
-  emailLabel: 'Email',
+  accountMenuButton: 'Show/hide account menu',
+  loginMenuItem: 'Go to login page',
+  emailField: 'Text field for the login email',
+  passwordField: 'Text field for the login password',
+  passwordToggleButton: /Button to (display|hide) the password/,
+  loginButton: 'Login',
+  openSearchButton: 'Open search',
   addToBasketButton: 'Add to Basket',
   basketButton: 'Show the shopping cart',
   checkoutButton: 'Checkout',
+  totalPriceLabel: 'Total Price: ',
 };
 
 /** Expected messages shown by the application. */
@@ -76,18 +76,27 @@ const MESSAGES = {
   invalidLogin: 'Invalid email or password.',
   emptyEmail: 'Please provide an email address.',
   noResults: 'No results found',
+  /**
+   * Builds the snack-bar text shown after a product is added for the first time.
+   * @param {string} productName - Name of the added product.
+   * @returns {string} Expected snack-bar text.
+   */
   productAdded: (productName) => `Placed ${productName} into basket`,
+  /**
+   * Builds the snack-bar text shown after the same product is added again.
+   * @param {string} productName - Name of the product added again.
+   * @returns {string} Expected snack-bar text.
+   */
   productAddedAgain: (productName) => `Added another ${productName} to basket`,
 };
 
 /** Search scenario data. */
 const SEARCH = {
   existingQuery: 'Apple',
-  existingResultsCount: 3,
   missingQuery: 'qwertyxyz',
 };
 
-/** Expected values for the basket scenarios. */
+/** Expected totals for the basket scenarios (the currency symbol is added by the app). */
 const EXPECTED = {
   priceOne: '1.99',
   priceTwo: '3.98',
