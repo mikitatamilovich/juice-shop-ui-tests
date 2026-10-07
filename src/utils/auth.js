@@ -1,13 +1,21 @@
-const { ROUTES, SELECTORS, UI_TEXT } = require('../../config/constants');
+const { ROUTES, UI_TEXT } = require('../../config/constants');
 const { requireValue } = require('./validate');
 
 /**
- * Dismisses the welcome banner and the cookie consent popups.
+ * Closes the welcome banner.
  * @param {import('@playwright/test').Page} page - Playwright page object.
- * @returns {Promise<void>} Resolves when both popups are closed.
+ * @returns {Promise<void>} Resolves after the close button is clicked.
  */
-async function dismissPopups(page) {
+async function dismissWelcomeBanner(page) {
   await page.getByRole('button', { name: UI_TEXT.welcomeCloseButton }).click();
+}
+
+/**
+ * Accepts the cookie consent message.
+ * @param {import('@playwright/test').Page} page - Playwright page object.
+ * @returns {Promise<void>} Resolves after the dismiss button is clicked.
+ */
+async function acceptCookies(page) {
   await page.getByRole('button', { name: UI_TEXT.cookieButton }).click();
 }
 
@@ -17,7 +25,7 @@ async function dismissPopups(page) {
  * @returns {Promise<void>} Resolves after the menu button is clicked.
  */
 async function openAccountMenu(page) {
-  await page.locator(SELECTORS.accountMenu).click();
+  await page.getByRole('button', { name: UI_TEXT.accountMenuButton }).click();
 }
 
 /**
@@ -27,19 +35,27 @@ async function openAccountMenu(page) {
  */
 async function openLoginForm(page) {
   await openAccountMenu(page);
-  await page.locator(SELECTORS.loginMenuItem).click();
+  await page.getByRole('menuitem', { name: UI_TEXT.loginMenuItem }).click();
 }
 
 /**
- * Fills the email and password fields of the login form.
+ * Fills the email field (the value may be empty for negative scenarios).
  * @param {import('@playwright/test').Page} page - Playwright page object.
- * @param {string} email - Email to enter (may be empty for negative scenarios).
- * @param {string} password - Password to enter.
- * @returns {Promise<void>} Resolves when both fields are filled.
+ * @param {string} email - Email to enter.
+ * @returns {Promise<void>} Resolves when the field is filled.
  */
-async function fillLoginForm(page, email, password) {
-  await page.getByLabel(UI_TEXT.emailLabel).fill(email);
-  await page.locator(SELECTORS.passwordInput).fill(password);
+async function fillEmail(page, email) {
+  await page.getByLabel(UI_TEXT.emailField).fill(email);
+}
+
+/**
+ * Fills the password field (the value may be empty for negative scenarios).
+ * @param {import('@playwright/test').Page} page - Playwright page object.
+ * @param {string} password - Password to enter.
+ * @returns {Promise<void>} Resolves when the field is filled.
+ */
+async function fillPassword(page, password) {
+  await page.getByLabel(UI_TEXT.passwordField).fill(password);
 }
 
 /**
@@ -48,16 +64,17 @@ async function fillLoginForm(page, email, password) {
  * @returns {Promise<void>} Resolves after the submit button is clicked.
  */
 async function submitLoginForm(page) {
-  await page.locator(SELECTORS.loginSubmit).click();
+  // exact: true avoids matching other buttons whose name contains "Login".
+  await page.getByRole('button', { name: UI_TEXT.loginButton, exact: true }).click();
 }
 
 /**
- * Clicks the "show/hide password" button.
+ * Clicks the "show/hide password" button (its name changes after every click).
  * @param {import('@playwright/test').Page} page - Playwright page object.
  * @returns {Promise<void>} Resolves after the click.
  */
 async function togglePasswordVisibility(page) {
-  await page.locator(SELECTORS.passwordToggle).click();
+  await page.getByRole('button', { name: UI_TEXT.passwordToggleButton }).click();
 }
 
 /**
@@ -70,7 +87,8 @@ async function waitForLoginRedirect(page) {
 }
 
 /**
- * Logs in through the Account menu and waits for the redirect.
+ * Full login flow: open the form, fill it, submit and wait for the redirect.
+ * Composes the single-action functions above.
  * @param {import('@playwright/test').Page} page - Playwright page object.
  * @param {string} email - User email.
  * @param {string} password - User password.
@@ -81,18 +99,20 @@ async function login(page, email, password) {
   requireValue(email, 'Email');
   requireValue(password, 'Password');
   await openLoginForm(page);
-  await fillLoginForm(page, email, password);
+  await fillEmail(page, email);
+  await fillPassword(page, password);
   await submitLoginForm(page);
   await waitForLoginRedirect(page);
 }
 
 module.exports = {
-  dismissPopups,
+  dismissWelcomeBanner,
+  acceptCookies,
   openAccountMenu,
   openLoginForm,
-  fillLoginForm,
+  fillEmail,
+  fillPassword,
   submitLoginForm,
   togglePasswordVisibility,
-  waitForLoginRedirect,
   login,
 };

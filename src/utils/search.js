@@ -1,4 +1,4 @@
-const { KEYS, SELECTORS } = require('../../config/constants');
+const { KEYS, SELECTORS, UI_TEXT } = require('../../config/constants');
 const { requireValue } = require('./validate');
 
 /**
@@ -10,7 +10,7 @@ const { requireValue } = require('./validate');
  */
 async function searchProduct(page, query) {
   requireValue(query, 'Search query');
-  await page.locator(SELECTORS.searchIcon).click();
+  await page.getByRole('button', { name: UI_TEXT.openSearchButton }).click();
   await page.locator(SELECTORS.searchInput).fill(query);
   await page.locator(SELECTORS.searchInput).press(KEYS.enter);
 }

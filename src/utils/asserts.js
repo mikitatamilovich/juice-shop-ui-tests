@@ -3,8 +3,7 @@ const { ATTRIBUTES, MESSAGES, ROUTES, SELECTORS, UI_TEXT } = require('../../conf
 const { requireValue } = require('./validate');
 
 /**
- * Checks that the user is logged in: the profile menu item shows the user email.
- * The Account menu must already be open.
+ * Checks that the profile menu item shows the user email. The Account menu must be open.
  * @param {import('@playwright/test').Page} page - Playwright page object.
  * @param {string} email - Email of the logged in user.
  * @returns {Promise<void>} Resolves when the check passes.
@@ -30,17 +29,16 @@ async function expectInvalidLogin(page) {
  * @returns {Promise<void>} Resolves when the check passes.
  */
 async function expectLoginDisabled(page) {
-  await expect(page.locator(SELECTORS.loginSubmit)).toBeDisabled();
+  await expect(page.getByRole('button', { name: UI_TEXT.loginButton, exact: true })).toBeDisabled();
 }
 
 /**
- * Checks that the empty email error is shown and login is blocked.
+ * Checks that the empty email error is shown.
  * @param {import('@playwright/test').Page} page - Playwright page object.
- * @returns {Promise<void>} Resolves when both checks pass.
+ * @returns {Promise<void>} Resolves when the check passes.
  */
-async function expectEmptyEmailBlocked(page) {
+async function expectEmptyEmailError(page) {
   await expect(page.getByText(MESSAGES.emptyEmail)).toBeVisible();
-  await expectLoginDisabled(page);
 }
 
 /**
@@ -52,52 +50,80 @@ async function expectEmptyEmailBlocked(page) {
  */
 async function expectPasswordInputType(page, type) {
   requireValue(type, 'Input type');
-  await expect(page.locator(SELECTORS.passwordInput)).toHaveAttribute(ATTRIBUTES.type, type);
+  await expect(page.getByLabel(UI_TEXT.passwordField)).toHaveAttribute(ATTRIBUTES.type, type);
 }
 
 /**
- * Checks that the application header is shown with the app name.
+ * Checks that the home button is visible.
  * @param {import('@playwright/test').Page} page - Playwright page object.
- * @returns {Promise<void>} Resolves when both checks pass.
+ * @returns {Promise<void>} Resolves when the check passes.
  */
-async function expectAppLoaded(page) {
-  const homeButton = page.getByRole('button', { name: UI_TEXT.homeButton });
-  await expect(homeButton).toBeVisible();
-  await expect(homeButton).toContainText(UI_TEXT.appHeading);
-}
-
-/**
- * Checks that neither the welcome banner nor the cookie banner is shown.
- * @param {import('@playwright/test').Page} page - Playwright page object.
- * @returns {Promise<void>} Resolves when all checks pass.
- */
-async function expectPopupsHidden(page) {
+async function expectHomeButtonVisible(page) {
   await expect(page.getByRole('button', { name: UI_TEXT.homeButton })).toBeVisible();
+}
+
+/**
+ * Checks that the home button shows the application name.
+ * @param {import('@playwright/test').Page} page - Playwright page object.
+ * @returns {Promise<void>} Resolves when the check passes.
+ */
+async function expectAppNameShown(page) {
+  await expect(page.getByRole('button', { name: UI_TEXT.homeButton })).toContainText(
+    UI_TEXT.appHeading,
+  );
+}
+
+/**
+ * Checks that the welcome banner is not shown.
+ * @param {import('@playwright/test').Page} page - Playwright page object.
+ * @returns {Promise<void>} Resolves when the check passes.
+ */
+async function expectWelcomeBannerHidden(page) {
   await expect(page.getByRole('button', { name: UI_TEXT.welcomeCloseButton })).toBeHidden();
+}
+
+/**
+ * Checks that the cookie banner is not shown.
+ * @param {import('@playwright/test').Page} page - Playwright page object.
+ * @returns {Promise<void>} Resolves when the check passes.
+ */
+async function expectCookieBannerHidden(page) {
   await expect(page.getByRole('button', { name: UI_TEXT.cookieButton })).toBeHidden();
 }
 
 /**
- * Checks that product cards are shown and have an Add to Basket button.
+ * Checks that the first product card is visible.
  * @param {import('@playwright/test').Page} page - Playwright page object.
- * @returns {Promise<void>} Resolves when both checks pass.
+ * @returns {Promise<void>} Resolves when the check passes.
  */
-async function expectProductCardsShown(page) {
-  const firstCard = page.locator(SELECTORS.productCard).first();
-  await expect(firstCard).toBeVisible();
+async function expectFirstCardVisible(page) {
+  await expect(page.getByRole('article').first()).toBeVisible();
+}
+
+/**
+ * Checks that the first product card has an Add to Basket button.
+ * @param {import('@playwright/test').Page} page - Playwright page object.
+ * @returns {Promise<void>} Resolves when the check passes.
+ */
+async function expectFirstCardHasAddButton(page) {
+  const firstCard = page.getByRole('article').first();
   await expect(firstCard.getByRole('button', { name: UI_TEXT.addToBasketButton })).toBeVisible();
 }
 
 /**
- * Checks the number of product cards in the search results.
+ * Checks that a product card with exactly the given name is shown.
+ * The name is matched exactly, so "Apple Juice" does not match "Pineapple Juice".
  * @param {import('@playwright/test').Page} page - Playwright page object.
- * @param {number} count - Expected number of cards.
+ * @param {string} productName - Product name as shown on the card.
  * @returns {Promise<void>} Resolves when the check passes.
- * @throws {Error} If the count is not provided.
+ * @throws {Error} If the product name is empty.
  */
-async function expectSearchResultsCount(page, count) {
-  requireValue(count, 'Expected count');
-  await expect(page.locator(SELECTORS.productCard)).toHaveCount(count);
+async function expectProductCardShown(page, productName) {
+  requireValue(productName, 'Product name');
+  const card = page
+    .getByRole('article')
+    .filter({ has: page.getByText(productName, { exact: true }) });
+  await expect(card).toBeVisible();
 }
 
 /**
@@ -124,7 +150,7 @@ async function expectSnackBar(page, message) {
 
 /**
  * Checks that the "product added" snack-bar is shown.
- * This replaces a fixed hard wait: the check retries until the notification appears.
+ * Replaces a hard wait: the check retries until the notification appears.
  * @param {import('@playwright/test').Page} page - Playwright page object.
  * @param {string} productName - Name of the added product.
  * @returns {Promise<void>} Resolves when the check passes.
@@ -148,20 +174,50 @@ async function expectProductAddedAgain(page, productName) {
 }
 
 /**
- * Checks that the basket contains the product and checkout is available.
+ * Checks that the basket contains the product.
  * @param {import('@playwright/test').Page} page - Playwright page object.
  * @param {string} productName - Name of the product expected in the basket.
- * @returns {Promise<void>} Resolves when both checks pass.
+ * @returns {Promise<void>} Resolves when the check passes.
  * @throws {Error} If the product name is empty.
  */
 async function expectProductInBasket(page, productName) {
   requireValue(productName, 'Product name');
-  await expect(page.locator(SELECTORS.basketRow).filter({ hasText: productName })).toBeVisible();
+  await expect(page.getByRole('row').filter({ hasText: productName })).toBeVisible();
+}
+
+/**
+ * Checks that the basket does not contain the product.
+ * @param {import('@playwright/test').Page} page - Playwright page object.
+ * @param {string} productName - Name of the product that must be absent.
+ * @returns {Promise<void>} Resolves when the check passes.
+ * @throws {Error} If the product name is empty.
+ */
+async function expectProductAbsentFromBasket(page, productName) {
+  requireValue(productName, 'Product name');
+  await expect(page.getByRole('row').filter({ hasText: productName })).toHaveCount(0);
+}
+
+/**
+ * Checks that the basket page is open.
+ * @param {import('@playwright/test').Page} page - Playwright page object.
+ * @returns {Promise<void>} Resolves when the check passes.
+ */
+async function expectBasketOpen(page) {
+  await expect(page).toHaveURL(new RegExp(ROUTES.basket));
+}
+
+/**
+ * Checks that the checkout button is enabled.
+ * @param {import('@playwright/test').Page} page - Playwright page object.
+ * @returns {Promise<void>} Resolves when the check passes.
+ */
+async function expectCheckoutEnabled(page) {
   await expect(page.getByRole('button', { name: UI_TEXT.checkoutButton })).toBeEnabled();
 }
 
 /**
  * Checks the total price shown on the basket page.
+ * The label prefix makes the match exact ("Total Price: 1.99" does not match "11.99").
  * @param {import('@playwright/test').Page} page - Playwright page object.
  * @param {string} price - Expected total, for example "3.98".
  * @returns {Promise<void>} Resolves when the check passes.
@@ -169,34 +225,29 @@ async function expectProductInBasket(page, productName) {
  */
 async function expectTotalPrice(page, price) {
   requireValue(price, 'Price');
-  await expect(page.locator(SELECTORS.totalPrice)).toContainText(price);
-}
-
-/**
- * Checks that the basket page is open and contains no products.
- * @param {import('@playwright/test').Page} page - Playwright page object.
- * @returns {Promise<void>} Resolves when both checks pass.
- */
-async function expectBasketEmpty(page) {
-  await expect(page).toHaveURL(new RegExp(ROUTES.basket));
-  await expect(page.locator(SELECTORS.basketRow)).toHaveCount(0);
+  await expect(page.getByText(`${UI_TEXT.totalPriceLabel}${price}`)).toBeVisible();
 }
 
 module.exports = {
   expectLoggedIn,
   expectInvalidLogin,
   expectLoginDisabled,
-  expectEmptyEmailBlocked,
+  expectEmptyEmailError,
   expectPasswordInputType,
-  expectAppLoaded,
-  expectPopupsHidden,
-  expectProductCardsShown,
-  expectSearchResultsCount,
+  expectHomeButtonVisible,
+  expectAppNameShown,
+  expectWelcomeBannerHidden,
+  expectCookieBannerHidden,
+  expectFirstCardVisible,
+  expectFirstCardHasAddButton,
+  expectProductCardShown,
   expectNoSearchResults,
   expectSnackBar,
   expectProductAdded,
   expectProductAddedAgain,
   expectProductInBasket,
+  expectProductAbsentFromBasket,
+  expectBasketOpen,
+  expectCheckoutEnabled,
   expectTotalPrice,
-  expectBasketEmpty,
 };

@@ -1,8 +1,9 @@
-const { SELECTORS, UI_TEXT } = require('../../config/constants');
+const { UI_TEXT } = require('../../config/constants');
 const { requireValue } = require('./validate');
 
 /**
  * Clicks Add to Basket on the card of the given product.
+ * The name is matched exactly, so "Apple Juice" does not match "Pineapple Juice".
  * @param {import('@playwright/test').Page} page - Playwright page object.
  * @param {string} productName - Product name as shown on the card.
  * @returns {Promise<void>} Resolves after the button is clicked.
@@ -10,8 +11,10 @@ const { requireValue } = require('./validate');
  */
 async function addProductToBasket(page, productName) {
   requireValue(productName, 'Product name');
-  const product = page.locator(SELECTORS.productCard).filter({ hasText: productName });
-  await product.getByRole('button', { name: UI_TEXT.addToBasketButton }).click();
+  const card = page
+    .getByRole('article')
+    .filter({ has: page.getByText(productName, { exact: true }) });
+  await card.getByRole('button', { name: UI_TEXT.addToBasketButton }).click();
 }
 
 /**
@@ -25,7 +28,6 @@ async function openBasket(page) {
 
 /**
  * Removes the given product from the basket page.
- * The remove button is the last button in the product row.
  * @param {import('@playwright/test').Page} page - Playwright page object.
  * @param {string} productName - Product name as shown in the basket.
  * @returns {Promise<void>} Resolves after the remove button is clicked.
@@ -33,7 +35,8 @@ async function openBasket(page) {
  */
 async function removeProductFromBasket(page, productName) {
   requireValue(productName, 'Product name');
-  const row = page.locator(SELECTORS.basketRow).filter({ hasText: productName });
+  const row = page.getByRole('row').filter({ hasText: productName });
+  // The remove button has no accessible name, it is the last button in the row.
   await row.getByRole('button').last().click();
 }
 
