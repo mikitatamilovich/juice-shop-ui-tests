@@ -5,6 +5,8 @@ module.exports = defineConfig({
   testDir: './tests',
   timeout: TIMEOUTS.test,
   expect: { timeout: TIMEOUTS.expect },
+  fullyParallel: true,
+  retries: 1,
   reporter: [['list'], ['html', { open: 'never' }]],
   use: {
     baseURL: BASE_URL,
