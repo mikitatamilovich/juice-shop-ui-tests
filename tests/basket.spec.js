@@ -1,9 +1,12 @@
 const { test } = require('@playwright/test');
-const { EXPECTED, PRODUCT_NAME } = require('../config/constants');
+const { EXPECTED, PRODUCT_NAME, ROUTES } = require('../config/constants');
+const { acceptCookies, dismissWelcomeBanner } = require('../src/utils/auth');
 const { addProductToBasket, openBasket, removeProductFromBasket } = require('../src/utils/basket');
-const { startLoggedInSession } = require('../src/utils/session');
+const { loginAsNewUser } = require('../src/utils/session');
 const {
-  expectBasketEmpty,
+  expectBasketOpen,
+  expectCheckoutEnabled,
+  expectProductAbsentFromBasket,
   expectProductAdded,
   expectProductAddedAgain,
   expectProductInBasket,
@@ -11,23 +14,28 @@ const {
 } = require('../src/utils/asserts');
 
 test.beforeEach(async ({ page, request }) => {
-  await startLoggedInSession(page, request);
+  await page.goto(ROUTES.home);
+  await dismissWelcomeBanner(page);
+  await acceptCookies(page);
+  await loginAsNewUser(page, request);
 });
 
-test('should add product to basket and show it in basket', async ({ page }) => {
+test('should show added product and total price in basket', async ({ page }) => {
   await addProductToBasket(page, PRODUCT_NAME);
   await expectProductAdded(page, PRODUCT_NAME);
   await openBasket(page);
   await expectProductInBasket(page, PRODUCT_NAME);
+  await expectCheckoutEnabled(page);
   await expectTotalPrice(page, EXPECTED.priceOne);
 });
 
-test('should show empty basket for a new user', async ({ page }) => {
+test('should show no products in basket for a new user', async ({ page }) => {
   await openBasket(page);
-  await expectBasketEmpty(page);
+  await expectBasketOpen(page);
+  await expectProductAbsentFromBasket(page, PRODUCT_NAME);
 });
 
-test('should increase quantity when adding the same product twice', async ({ page }) => {
+test('should double the total price when the same product is added twice', async ({ page }) => {
   await addProductToBasket(page, PRODUCT_NAME);
   await expectProductAdded(page, PRODUCT_NAME);
   await addProductToBasket(page, PRODUCT_NAME);
@@ -41,5 +49,5 @@ test('should remove product from basket', async ({ page }) => {
   await expectProductAdded(page, PRODUCT_NAME);
   await openBasket(page);
   await removeProductFromBasket(page, PRODUCT_NAME);
-  await expectBasketEmpty(page);
+  await expectProductAbsentFromBasket(page, PRODUCT_NAME);
 });
