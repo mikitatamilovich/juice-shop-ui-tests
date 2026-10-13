@@ -12,5 +12,8 @@ module.exports = defineConfig({
     baseURL: BASE_URL,
     trace: 'on-first-retry',
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    { name: 'ui', testIgnore: '**/api/**', use: { ...devices['Desktop Chrome'] } },
+    { name: 'api', testMatch: '**/api/**/*.spec.js' },
+  ],
 });
