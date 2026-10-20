@@ -5,12 +5,15 @@ const { sendRequest } = require('./http');
 
 /**
  * Sends the login request and returns the raw response (used by negative tests).
+ * @param {import('@playwright/test').APIRequestContext} request - Playwright request context.
  * @param {string} email - User email.
  * @param {string} password - User password.
  * @returns {Promise<{status: number, body: any}>} Raw response.
  */
-function requestLogin(email, password) {
-  return sendRequest(HTTP_METHOD.post, API_ENDPOINTS.login, { body: { email, password } });
+function requestLogin(request, email, password) {
+  return sendRequest(request, HTTP_METHOD.post, API_ENDPOINTS.login, {
+    body: { email, password },
+  });
 }
 
 /**
@@ -26,13 +29,14 @@ function parseSession(body) {
 
 /**
  * Logs in and returns the token together with the basket id.
+ * @param {import('@playwright/test').APIRequestContext} request - Playwright request context.
  * @param {string} email - User email.
  * @param {string} password - User password.
  * @returns {Promise<{token: string, basketId: number}>} Session data.
  * @throws {NetworkError} If the login does not return 200.
  */
-async function loginSession(email, password) {
-  const response = await requestLogin(email, password);
+async function loginSession(request, email, password) {
+  const response = await requestLogin(request, email, password);
   if (response.status !== API_STATUS.ok) {
     throw new NetworkError(`Login failed: ${JSON.stringify(response.body)}`, response.status);
   }
@@ -41,12 +45,13 @@ async function loginSession(email, password) {
 
 /**
  * Logs in and returns only the token.
+ * @param {import('@playwright/test').APIRequestContext} request - Playwright request context.
  * @param {string} email - User email.
  * @param {string} password - User password.
  * @returns {Promise<string>} JWT token.
  */
-async function login(email, password) {
-  return (await loginSession(email, password)).token;
+async function login(request, email, password) {
+  return (await loginSession(request, email, password)).token;
 }
 
 module.exports = { requestLogin, loginSession, login };

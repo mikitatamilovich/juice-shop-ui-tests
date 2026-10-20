@@ -1,28 +1,29 @@
 const base = require('@playwright/test');
 const { createAccount } = require('../api/accounts');
-const { createTestUser } = require('../api/users');
+const { deleteBasketItem } = require('../api/basket');
+const { createTestUser } = require('../utils/api');
 
 /** Test with API fixtures: a registered user, logged in accounts and a basket cleanup list. */
 const test = base.test.extend({
   /** Registered user without a session. */
-  // eslint-disable-next-line no-empty-pattern -- Playwright requires a destructured first argument
-  user: async ({}, use) => {
-    await use(await createTestUser());
+  user: async ({ request }, use) => {
+    await use(await createTestUser(request));
   },
   /** Registered and logged in account with its basket id. */
-  // eslint-disable-next-line no-empty-pattern -- Playwright requires a destructured first argument
-  account: async ({}, use) => {
-    await use(await createAccount());
+  account: async ({ request }, use) => {
+    await use(await createAccount(request));
   },
   /** Second account, used for the authorization checks. */
-  // eslint-disable-next-line no-empty-pattern -- Playwright requires a destructured first argument
-  otherAccount: async ({}, use) => {
-    await use(await createAccount());
+  otherAccount: async ({ request }, use) => {
+    await use(await createAccount(request));
   },
-  /** List of basket item ids created by a test; the afterEach hook deletes them. */
-  // eslint-disable-next-line no-empty-pattern -- Playwright requires a destructured first argument
-  basketCleanup: async ({}, use) => {
-    await use([]);
+  /** Basket item ids created by a test. Items are deleted after the test, even if it failed. */
+  basketCleanup: async ({ request, account }, use) => {
+    const itemIds = [];
+    await use(itemIds);
+    for (const itemId of itemIds.filter(Boolean)) {
+      await deleteBasketItem(request, account.token, itemId);
+    }
   },
 });
 

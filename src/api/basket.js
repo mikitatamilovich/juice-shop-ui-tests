@@ -14,32 +14,38 @@ function buildBasketItem(basketId, productId, quantity) {
 
 /**
  * Gets a basket by id. Pass no token to check unauthorized access.
+ * @param {import('@playwright/test').APIRequestContext} request - Playwright request context.
  * @param {string|undefined} token - JWT token.
  * @param {number} basketId - Basket id.
  * @returns {Promise<{status: number, body: any}>} Raw response.
  */
-function getBasket(token, basketId) {
-  return sendRequest(HTTP_METHOD.get, API_ENDPOINTS.basket(basketId), { token });
+function getBasket(request, token, basketId) {
+  return sendRequest(request, HTTP_METHOD.get, API_ENDPOINTS.basket(basketId), { token });
 }
 
 /**
  * Adds a product to a basket.
+ * @param {import('@playwright/test').APIRequestContext} request - Playwright request context.
  * @param {string|undefined} token - JWT token.
  * @param {{ProductId: number, BasketId: number, quantity: number}} item - Basket item data.
  * @returns {Promise<{status: number, body: any}>} Raw response.
  */
-function addToBasket(token, item) {
-  return sendRequest(HTTP_METHOD.post, API_ENDPOINTS.basketItems, { token, body: item });
+function addToBasket(request, token, item) {
+  return sendRequest(request, HTTP_METHOD.post, API_ENDPOINTS.basketItems, {
+    token,
+    body: item,
+  });
 }
 
 /**
- * Deletes a basket item.
- * @param {string} token - JWT token.
+ * Deletes a basket item. Pass no token to check unauthorized access.
+ * @param {import('@playwright/test').APIRequestContext} request - Playwright request context.
+ * @param {string|undefined} token - JWT token.
  * @param {number} itemId - Basket item id.
  * @returns {Promise<{status: number, body: any}>} Raw response.
  */
-function deleteBasketItem(token, itemId) {
-  return sendRequest(HTTP_METHOD.delete, API_ENDPOINTS.basketItem(itemId), { token });
+function deleteBasketItem(request, token, itemId) {
+  return sendRequest(request, HTTP_METHOD.delete, API_ENDPOINTS.basketItem(itemId), { token });
 }
 
 module.exports = { buildBasketItem, getBasket, addToBasket, deleteBasketItem };

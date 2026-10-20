@@ -12,28 +12,40 @@ const API_ENDPOINTS = {
 const HTTP_METHOD = { get: 'GET', post: 'POST', delete: 'DELETE' };
 
 /** HTTP status codes used in API checks. */
-const API_STATUS = { ok: 200, created: 201, unauthorized: 401 };
+const API_STATUS = {
+  ok: 200,
+  created: 201,
+  badRequest: 400,
+  unauthorized: 401,
+  forbidden: 403,
+  notFound: 404,
+};
 
 /** HTTP header names and values. */
 const HEADERS = {
-  contentType: 'Content-Type',
-  json: 'application/json',
   authorization: 'Authorization',
   bearerPrefix: 'Bearer ',
 };
 
 /** Kinds of email used by the data-driven login test. */
-const EMAIL_KIND = { registered: 'registered', unknown: 'unknown', empty: 'empty' };
+const EMAIL_KIND = {
+  registered: 'registered',
+  unknown: 'unknown',
+  empty: 'empty',
+  injection: 'injection',
+};
+
+/** Email with an SQL injection payload. */
+const SQL_INJECTION_EMAIL = "' OR 1=1--";
 
 /** Basket scenario data. */
 const BASKET_ITEM = {
   nonExistingProductId: 999999,
+  nonExistingItemId: 999999,
   quantityOne: 1,
+  zeroQuantity: 0,
   negativeQuantity: -1,
 };
-
-/** Name of the report annotation that marks a defect or a suspicious behaviour. */
-const FINDING_ANNOTATION = 'finding';
 
 /** Field of the token payload that must not contain the password. */
 const PASSWORD_FIELD = 'password';
@@ -41,21 +53,10 @@ const PASSWORD_FIELD = 'password';
 /** ReqRes service used for the pagination checks. */
 const REQRES = {
   baseUrl: process.env.REQRES_BASE_URL || 'https://reqres.in',
+  apiKey: process.env.REQRES_API_KEY,
+  apiKeyHeader: 'x-api-key',
   usersPage: (page) => `/api/users?page=${page}`,
   firstPage: 1,
-};
-
-/**
- * Statuses observed on the local Docker stand (see notes.md).
- * Some of them document defects, so they are recorded as findings in the report.
- */
-const OBSERVED_STATUS = {
-  emptyEmailLogin: 401,
-  emptyPasswordLogin: 401,
-  foreignBasket: 200,
-  nonExistingProduct: 500,
-  negativeQuantity: 200,
-  emptySearch: 200,
 };
 
 module.exports = {
@@ -64,9 +65,8 @@ module.exports = {
   API_STATUS,
   HEADERS,
   EMAIL_KIND,
+  SQL_INJECTION_EMAIL,
   BASKET_ITEM,
-  FINDING_ANNOTATION,
   PASSWORD_FIELD,
   REQRES,
-  OBSERVED_STATUS,
 };

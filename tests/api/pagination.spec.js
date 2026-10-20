@@ -1,4 +1,5 @@
-const { expect, test } = require('@playwright/test');
+const { expect } = require('@playwright/test');
+const { test } = require('../../src/fixtures/api');
 const { fetchAllUsers } = require('../../src/api/reqres');
 const { REQRES } = require('../../config/api.constants');
 
@@ -6,8 +7,13 @@ test.describe.configure({ mode: 'serial' });
 
 let collected;
 
-test.beforeAll(async () => {
-  collected = await fetchAllUsers();
+test.beforeAll(async ({ playwright }) => {
+  const request = await playwright.request.newContext();
+  try {
+    collected = await fetchAllUsers(request);
+  } finally {
+    await request.dispose();
+  }
 });
 
 test('should collect all users across pages and match total', async () => {

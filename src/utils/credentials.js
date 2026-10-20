@@ -1,4 +1,4 @@
-const { EMAIL_KIND } = require('../../config/api.constants');
+const { EMAIL_KIND, SQL_INJECTION_EMAIL } = require('../../config/api.constants');
 const { EMPTY_VALUE } = require('../../config/constants');
 const { buildUniqueEmail } = require('./api');
 
@@ -9,10 +9,16 @@ const { buildUniqueEmail } = require('./api');
  * @returns {string} Email to send.
  */
 function resolveEmail(emailKind, user) {
-  if (emailKind === EMAIL_KIND.registered) {
-    return user.email;
+  switch (emailKind) {
+    case EMAIL_KIND.registered:
+      return user.email;
+    case EMAIL_KIND.unknown:
+      return buildUniqueEmail();
+    case EMAIL_KIND.injection:
+      return SQL_INJECTION_EMAIL;
+    default:
+      return EMPTY_VALUE;
   }
-  return emailKind === EMAIL_KIND.unknown ? buildUniqueEmail() : EMPTY_VALUE;
 }
 
 module.exports = { resolveEmail };
