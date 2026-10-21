@@ -18,4 +18,3 @@ function productNameMatcher(productName) {
 }
 
 module.exports = { escapeRegExp, productNameMatcher };
-const unused   =  1;
