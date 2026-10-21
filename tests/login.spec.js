@@ -41,7 +41,7 @@ test('should block login with empty email', async ({ loginPage }) => {
   await loginPage.fillEmail(EMPTY_VALUE);
   await loginPage.fillPassword(TEST_USER_PASSWORD);
   await loginPage.expectEmptyEmailError();
-  await loginPage.expectPasswordInputType(INPUT_TYPE.visible);
+  await loginPage.expectLoginDisabled();
 });
 
 test('should block login with empty password', async ({ loginPage, testUser }) => {
