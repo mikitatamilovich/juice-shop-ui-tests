@@ -8,7 +8,7 @@ const {
 } = require('../../src/api/basket');
 const { findProductIdByName } = require('../../src/api/products');
 const { formatSchemaErrors, validateBasket, validateBasketItem } = require('../../src/schemas');
-const { API_STATUS, BASKET_ITEM } = require('../../config/api.constants');
+const { API_STATUS, BASKET_ITEM, KNOWN_DEFECT } = require('../../config/api.constants');
 const { MESSAGES, PRODUCT_NAME } = require('../../config/constants');
 
 /**
@@ -32,27 +32,30 @@ async function addAndTrack(request, account, productId, quantity, basketCleanup)
 
 test('should return 401 for basket request without token', async ({ request, account }) => {
   const response = await getBasket(request, undefined, account.basketId);
+
   expect(response.status).toBe(API_STATUS.unauthorized);
   expect(response.body).toContain(MESSAGES.noAuthHeader);
 });
 
 test('should return own basket for request with own token', async ({ request, account }) => {
   const response = await getBasket(request, account.token, account.basketId);
+
   expect(response.status).toBe(API_STATUS.ok);
   expect(validateBasket(response.body), formatSchemaErrors(validateBasket)).toBe(true);
   expect(response.body.data.id).toBe(account.basketId);
 });
 
-test('should return 403 for foreign basket requested with own token', async ({
-  request,
-  account,
-  otherAccount,
-}) => {
-  const response = await getBasket(request, account.token, otherAccount.basketId);
-  expect(response.status, 'A user must not read the basket of another user').toBe(
-    API_STATUS.forbidden,
-  );
-});
+test(
+  'should return 403 for foreign basket requested with own token',
+  KNOWN_DEFECT.foreignBasketRead,
+  async ({ request, account, otherAccount }) => {
+    const response = await getBasket(request, account.token, otherAccount.basketId);
+
+    expect(response.status, 'A user must not read the basket of another user').toBe(
+      API_STATUS.forbidden,
+    );
+  },
+);
 
 test('should return created basket item with valid field types', async ({
   request,
@@ -60,6 +63,7 @@ test('should return created basket item with valid field types', async ({
   basketCleanup,
 }) => {
   const productId = await findProductIdByName(request, PRODUCT_NAME);
+
   const added = await addAndTrack(
     request,
     account,
@@ -67,6 +71,7 @@ test('should return created basket item with valid field types', async ({
     BASKET_ITEM.quantityOne,
     basketCleanup,
   );
+
   expect(added.status).toBe(API_STATUS.ok);
   expect(validateBasketItem(added.body.data), formatSchemaErrors(validateBasketItem)).toBe(true);
   expect(added.body.data.quantity).toBe(BASKET_ITEM.quantityOne);
@@ -79,8 +84,10 @@ test('should increase basket item count by exactly one', async ({
 }) => {
   const productId = await findProductIdByName(request, PRODUCT_NAME);
   const before = await getBasket(request, account.token, account.basketId);
+
   await addAndTrack(request, account, productId, BASKET_ITEM.quantityOne, basketCleanup);
   const after = await getBasket(request, account.token, account.basketId);
+
   expect(after.body.data.Products.length, 'Basket must grow by exactly one item').toBe(
     before.body.data.Products.length + 1,
   );
@@ -88,54 +95,69 @@ test('should increase basket item count by exactly one', async ({
   expect(item.BasketItem.quantity).toBe(BASKET_ITEM.quantityOne);
 });
 
-test('should return 400 for non-existing product id', async ({
-  request,
-  account,
-  basketCleanup,
-}) => {
-  const response = await addAndTrack(
-    request,
-    account,
-    BASKET_ITEM.nonExistingProductId,
-    BASKET_ITEM.quantityOne,
-    basketCleanup,
-  );
-  expect(response.status, 'A client error is expected, not a server error').toBe(
-    API_STATUS.badRequest,
-  );
-});
+test(
+  'should return 400 for non-existing product id',
+  KNOWN_DEFECT.nonExistingProduct,
+  async ({ request, account, basketCleanup }) => {
+    const response = await addAndTrack(
+      request,
+      account,
+      BASKET_ITEM.nonExistingProductId,
+      BASKET_ITEM.quantityOne,
+      basketCleanup,
+    );
 
-test('should return 400 for negative quantity', async ({ request, account, basketCleanup }) => {
-  const productId = await findProductIdByName(request, PRODUCT_NAME);
-  const response = await addAndTrack(
-    request,
-    account,
-    productId,
-    BASKET_ITEM.negativeQuantity,
-    basketCleanup,
-  );
-  expect(response.status, 'Negative quantity must be rejected').toBe(API_STATUS.badRequest);
-});
+    expect(response.status, 'A client error is expected, not a server error').toBe(
+      API_STATUS.badRequest,
+    );
+  },
+);
 
-test('should return 400 for zero quantity', async ({ request, account, basketCleanup }) => {
-  const productId = await findProductIdByName(request, PRODUCT_NAME);
-  const response = await addAndTrack(
-    request,
-    account,
-    productId,
-    BASKET_ITEM.zeroQuantity,
-    basketCleanup,
-  );
-  expect(response.status, 'Zero quantity must be rejected').toBe(API_STATUS.badRequest);
-});
+test(
+  'should return 400 for negative quantity',
+  KNOWN_DEFECT.negativeQuantity,
+  async ({ request, account, basketCleanup }) => {
+    const productId = await findProductIdByName(request, PRODUCT_NAME);
+
+    const response = await addAndTrack(
+      request,
+      account,
+      productId,
+      BASKET_ITEM.negativeQuantity,
+      basketCleanup,
+    );
+
+    expect(response.status, 'Negative quantity must be rejected').toBe(API_STATUS.badRequest);
+  },
+);
+
+test(
+  'should return 400 for zero quantity',
+  KNOWN_DEFECT.zeroQuantity,
+  async ({ request, account, basketCleanup }) => {
+    const productId = await findProductIdByName(request, PRODUCT_NAME);
+
+    const response = await addAndTrack(
+      request,
+      account,
+      productId,
+      BASKET_ITEM.zeroQuantity,
+      basketCleanup,
+    );
+
+    expect(response.status, 'Zero quantity must be rejected').toBe(API_STATUS.badRequest);
+  },
+);
 
 test('should return 401 for adding product without token', async ({ request, account }) => {
   const productId = await findProductIdByName(request, PRODUCT_NAME);
+
   const response = await addToBasket(
     request,
     undefined,
     buildBasketItem(account.basketId, productId, BASKET_ITEM.quantityOne),
   );
+
   expect(response.status).toBe(API_STATUS.unauthorized);
   expect(response.body).toContain(MESSAGES.noAuthHeader);
   const basket = await getBasket(request, account.token, account.basketId);
@@ -148,11 +170,13 @@ test('should return 401 for adding product to foreign basket', async ({
   otherAccount,
 }) => {
   const productId = await findProductIdByName(request, PRODUCT_NAME);
+
   const response = await addToBasket(
     request,
     account.token,
     buildBasketItem(otherAccount.basketId, productId, BASKET_ITEM.quantityOne),
   );
+
   try {
     expect(response.status, 'A user must not change the basket of another user').toBe(
       API_STATUS.unauthorized,
@@ -174,7 +198,9 @@ test('should remove product from basket', async ({ request, account, basketClean
     BASKET_ITEM.quantityOne,
     basketCleanup,
   );
+
   const removed = await deleteBasketItem(request, account.token, added.body.data.id);
+
   expect(removed.status).toBe(API_STATUS.ok);
   expect(removed.body).toEqual({ status: 'success', data: {} });
   const after = await getBasket(request, account.token, account.basketId);
@@ -194,7 +220,9 @@ test('should return 401 for deleting basket item without token', async ({
     BASKET_ITEM.quantityOne,
     basketCleanup,
   );
+
   const response = await deleteBasketItem(request, undefined, added.body.data.id);
+
   expect(response.status).toBe(API_STATUS.unauthorized);
   expect(response.body).toContain(MESSAGES.noAuthHeader);
   const basket = await getBasket(request, account.token, account.basketId);
@@ -203,5 +231,6 @@ test('should return 401 for deleting basket item without token', async ({
 
 test('should return 404 for deleting non-existing basket item', async ({ request, account }) => {
   const response = await deleteBasketItem(request, account.token, BASKET_ITEM.nonExistingItemId);
+
   expect(response.status).toBe(API_STATUS.notFound);
 });
