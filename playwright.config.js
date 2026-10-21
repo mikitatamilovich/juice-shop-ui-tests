@@ -8,6 +8,7 @@ module.exports = defineConfig({
   timeout: TIMEOUTS.test,
   expect: { timeout: TIMEOUTS.expect },
   fullyParallel: true,
+  workers: isCI ? 2 : undefined,
   forbidOnly: isCI,
   retries: 1,
   reporter: [['list'], ['html', { open: 'never' }]],
