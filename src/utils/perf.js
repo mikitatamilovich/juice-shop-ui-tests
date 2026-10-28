@@ -1,8 +1,28 @@
 const { mean, median, percentile } = require('./stats');
 
+/** Percentile reported in the results table. */
+const PERCENTILE = 95;
+
+/** Number of decimal places in the results table. */
+const DECIMALS = 1;
+
+/**
+ * Fails fast when a value is not a positive integer.
+ * @param {number} value - Value to check.
+ * @param {string} name - Argument name for the error message.
+ * @returns {void}
+ * @throws {Error} If the value is not a positive integer.
+ */
+function assertPositiveInteger(value, name) {
+  if (!Number.isInteger(value) || value < 1) {
+    throw new Error(`${name} must be a positive integer, got ${value}`);
+  }
+}
+
 /**
  * Sends one request and measures only its duration.
- * A network error is recorded as an error result instead of being thrown.
+ * A network error is recorded as an error result instead of being thrown,
+ * because the experiment counts errors in its table.
  * @param {() => Promise<import('@playwright/test').APIResponse>} send - Function that sends the request.
  * @returns {Promise<{ms: number, status: number|null, error?: string}>} Duration and HTTP status.
  */
@@ -30,8 +50,10 @@ function isError(result) {
  * @param {() => Promise<import('@playwright/test').APIResponse>} send - Request sender.
  * @param {number} count - Number of requests.
  * @returns {Promise<{totalMs: number, results: object[]}>} Series total time and per-request results.
+ * @throws {Error} If count is not a positive integer.
  */
 async function runSequential(send, count) {
+  assertPositiveInteger(count, 'count');
   const start = performance.now();
   const results = [];
   for (let i = 0; i < count; i += 1) {
@@ -46,8 +68,11 @@ async function runSequential(send, count) {
  * @param {number} count - Total number of requests.
  * @param {number} batchSize - Number of simultaneous requests.
  * @returns {Promise<{totalMs: number, results: object[]}>} Series total time and per-request results.
+ * @throws {Error} If count or batchSize is not a positive integer.
  */
 async function runInBatches(send, count, batchSize) {
+  assertPositiveInteger(count, 'count');
+  assertPositiveInteger(batchSize, 'batchSize');
   const start = performance.now();
   const results = [];
   for (let sent = 0; sent < count; sent += batchSize) {
@@ -63,6 +88,7 @@ async function runInBatches(send, count, batchSize) {
  * @param {string} scenario - Scenario name for the table.
  * @param {{totalMs: number, results: object[]}[]} series - Measured series.
  * @returns {object} Row with request count, mean total time, mean, median, p95 and error count.
+ * @throws {Error} If there are no measured requests.
  */
 function summarize(scenario, series) {
   const times = series.flatMap((item) => item.results.map((result) => result.ms));
@@ -72,7 +98,7 @@ function summarize(scenario, series) {
     totalMs: mean(series.map((item) => item.totalMs)),
     meanMs: mean(times),
     medianMs: median(times),
-    p95Ms: percentile(times, 95),
+    p95Ms: percentile(times, PERCENTILE),
     errors: series.reduce((sum, item) => sum + item.results.filter(isError).length, 0),
   };
 }
@@ -83,7 +109,7 @@ function summarize(scenario, series) {
  * @returns {string} Markdown table.
  */
 function toMarkdownTable(rows) {
-  const fmt = (value) => value.toFixed(1);
+  const fmt = (value) => value.toFixed(DECIMALS);
   const lines = [
     '| Сценарий | Запросов | Общее время, мс | Среднее, мс | Медиана, мс | p95, мс | Ошибки (не 2xx) |',
     '|---|---|---|---|---|---|---|',
