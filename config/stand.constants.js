@@ -65,6 +65,9 @@ const DB_DEFAULTS = {
   host: 'localhost',
   port: 5433,
 };
+/** Timeout of the performance experiment test, ms. */
+const PERF_TEST_TIMEOUT_MS = 180_000;
+
 module.exports = {
   STAND,
   TASK_TITLE_PREFIX,
@@ -76,4 +79,5 @@ module.exports = {
   TASK_FIELDS,
   STAND_MESSAGES,
   DB_DEFAULTS,
+  PERF_TEST_TIMEOUT_MS,
 };

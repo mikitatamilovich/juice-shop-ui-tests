@@ -1,5 +1,6 @@
 const { defineConfig } = require('@playwright/test');
 require('dotenv').config({ quiet: true });
+const { STAND, PERF_TEST_TIMEOUT_MS } = require('./config/stand.constants');
 
 // Separate config: the experiment is not part of the regular test runs.
 module.exports = defineConfig({
@@ -7,7 +8,7 @@ module.exports = defineConfig({
   fullyParallel: false,
   workers: 1,
   retries: 0,
-  timeout: 180_000,
+  timeout: PERF_TEST_TIMEOUT_MS,
   reporter: [['list']],
-  use: { baseURL: process.env.STAND_API_URL || 'http://localhost:4000' },
+  use: { baseURL: STAND.apiUrl },
 });

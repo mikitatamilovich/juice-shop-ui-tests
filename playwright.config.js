@@ -1,11 +1,12 @@
 const { defineConfig, devices } = require('@playwright/test');
 require('dotenv').config({ quiet: true });
 const { BASE_URL, TIMEOUTS } = require('./config/constants');
+const { STAND } = require('./config/stand.constants');
 
 const isCI = Boolean(process.env.CI);
-const STAND_API_URL = process.env.STAND_API_URL || 'http://localhost:4000';
 
 module.exports = defineConfig({
+  testDir: './tests',
   timeout: TIMEOUTS.test,
   expect: { timeout: TIMEOUTS.expect },
   fullyParallel: true,
@@ -13,6 +14,11 @@ module.exports = defineConfig({
   forbidOnly: isCI,
   retries: 1,
   reporter: [['list'], ['html', { open: 'never' }]],
+  use: {
+    baseURL: BASE_URL,
+    trace: 'on-first-retry',
+    screenshot: 'only-on-failure',
+  },
   projects: [
     {
       name: 'ui',
@@ -33,7 +39,7 @@ module.exports = defineConfig({
     {
       name: 'stand',
       testDir: './tests/stand',
-      use: { baseURL: STAND_API_URL },
+      use: { baseURL: STAND.apiUrl },
     },
   ],
 });
