@@ -60,7 +60,11 @@ const TASK_FIELDS = ['id', 'title', 'description', 'status', 'priority', 'dueDat
 const STAND_MESSAGES = {
   authRequired: 'Authentication required. Please log in.',
 };
-
+/** Fallback connection settings of the stand database when .env does not set them. */
+const DB_DEFAULTS = {
+  host: 'localhost',
+  port: 5433,
+};
 module.exports = {
   STAND,
   TASK_TITLE_PREFIX,
@@ -71,4 +75,5 @@ module.exports = {
   TASK_DEFAULTS,
   TASK_FIELDS,
   STAND_MESSAGES,
+  DB_DEFAULTS,
 };

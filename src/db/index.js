@@ -1,4 +1,5 @@
 const { Client } = require('pg');
+const { DB_DEFAULTS } = require('../../config/stand.constants');
 
 /**
  * Task columns for SELECT. The table stores UTC values in "timestamp without time zone",
@@ -21,8 +22,8 @@ function createDbClient() {
     if (!value) throw new Error(`Environment variable ${name} is not set (see .env.example)`);
   }
   return new Client({
-    host: DB_HOST || 'localhost',
-    port: Number(DB_PORT || 5433),
+    host: DB_HOST || DB_DEFAULTS.host,
+    port: Number(DB_PORT || DB_DEFAULTS.port),
     database: DB_NAME,
     user: DB_USER,
     password: DB_PASSWORD,
