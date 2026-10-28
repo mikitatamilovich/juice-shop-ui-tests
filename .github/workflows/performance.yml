@@ -2,9 +2,18 @@ name: Performance (manual)
 
 on:
   workflow_dispatch:
+  # ВРЕМЕННО: чтобы запустить эксперимент из ветки до мёржа в main.
+  # После получения результатов удалите блок push (останется только workflow_dispatch).
+  push:
+    branches: [feature/sprint-7-8-ci]
+    paths:
+      - '.github/workflows/performance.yml'
+
+permissions:
+  contents: read
 
 env:
-  NODE_VERSION: '22' # поставьте то же значение, что в ci.yml
+  NODE_VERSION: '22' # то же значение, что в ci.yml
   STAND_REPO: opudrovs/react-api-data-sample
   STAND_REF: 208b3e9e5958cef39a319f11ab62a386a5de1c42
   DB_HOST: localhost
