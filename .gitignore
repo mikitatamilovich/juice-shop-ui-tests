@@ -4,5 +4,6 @@ node_modules/
 /test-results/
 /blob-report/
 /playwright/.cache/
-/playwright/.auth/perf-results/
+/playwright/.auth/
+perf-results/
 isolation-results/
