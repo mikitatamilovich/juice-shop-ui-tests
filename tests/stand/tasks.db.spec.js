@@ -1,17 +1,9 @@
 const { test, expect } = require('../../src/fixtures/stand');
 const { buildTask } = require('../../src/data/task');
-const { countTasksByTitle, deleteTaskById, getTaskById } = require('../../src/db');
+const { countTasksByTitle, getTaskById } = require('../../src/db');
 const { STAND_STATUS, TASK_PRIORITY, TASK_STATUS } = require('../../config/stand.constants');
 
 // API does the action, SQL confirms the result.
-// Rows created by a test are physically removed here; the fixture then soft-deletes via API
-// (404 is ignored), so no test data stays in the table.
-test.afterEach(async ({ db, createdIds }) => {
-  for (const id of createdIds) {
-    await deleteTaskById(db, id);
-  }
-});
-
 test.describe('Tasks API and database', () => {
   test('created task is saved in the database', async ({ api, db, createdIds }) => {
     const data = buildTask({ status: TASK_STATUS.pending, priority: TASK_PRIORITY.medium });

@@ -1,6 +1,5 @@
 const { test, expect } = require('../../src/fixtures/stand');
 const { buildTask } = require('../../src/data/task');
-const { deleteTaskById } = require('../../src/db');
 const {
   STAND_ENDPOINTS,
   STAND_MESSAGES,
@@ -9,13 +8,6 @@ const {
   TASK_PRIORITY,
   TASK_STATUS,
 } = require('../../config/stand.constants');
-
-// Rows soft-deleted by the fixture are removed physically, so no test data stays in the table.
-test.afterEach(async ({ db, createdIds }) => {
-  for (const id of createdIds) {
-    await deleteTaskById(db, id);
-  }
-});
 
 test.describe('Tasks API', () => {
   test('should return a list of tasks with the documented fields', async ({ api, createTask }) => {
