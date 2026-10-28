@@ -56,6 +56,5 @@ test.describe('GET performance', () => {
     fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(path.join(dir, 'latest.md'), report);
     await testInfo.attach('perf-results.md', { body: report, contentType: 'text/markdown' });
-    console.log(`\n${report}`);
   });
 });
