@@ -1,27 +1,19 @@
-const { test } = require('@playwright/test');
-const { ROUTES } = require('../config/constants');
-const { acceptCookies, dismissWelcomeBanner } = require('../src/utils/auth');
-const {
-  expectAppNameShown,
-  expectCookieBannerHidden,
-  expectHomeButtonVisible,
-  expectWelcomeBannerHidden,
-} = require('../src/utils/asserts');
+const { test } = require('../src/fixtures');
 
-test.beforeEach(async ({ page }) => {
-  await page.goto(ROUTES.home);
-  await dismissWelcomeBanner(page);
-  await acceptCookies(page);
+test.beforeEach(async ({ basePage }) => {
+  await basePage.open();
+  await basePage.dismissWelcomeBanner();
+  await basePage.acceptCookies();
 });
 
-test('should show app name after popups are dismissed', async ({ page }) => {
-  await expectHomeButtonVisible(page);
-  await expectAppNameShown(page);
+test('should show app name after popups are dismissed', async ({ basePage }) => {
+  await basePage.expectHomeButtonVisible();
+  await basePage.expectAppNameShown();
 });
 
-test('should not show popups again after reload', async ({ page }) => {
-  await page.reload();
-  await expectHomeButtonVisible(page);
-  await expectWelcomeBannerHidden(page);
-  await expectCookieBannerHidden(page);
+test('should not show popups again after reload', async ({ basePage }) => {
+  await basePage.reload();
+  await basePage.expectHomeButtonVisible();
+  await basePage.expectWelcomeBannerHidden();
+  await basePage.expectCookieBannerHidden();
 });
