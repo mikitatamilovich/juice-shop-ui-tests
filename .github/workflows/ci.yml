@@ -218,3 +218,111 @@ jobs:
           path: test-results/
           retention-days: 14
           if-no-files-found: ignore
+
+  stand-tests:
+    name: Stand tests (API + SQL)
+    runs-on: ubuntu-latest
+    needs: lint
+    timeout-minutes: 20
+
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    env:
+      STAND_REPO: opudrovs/react-api-data-sample
+      STAND_REF: 208b3e9e5958cef39a319f11ab62a386a5de1c42
+
+      DB_HOST: localhost
+      DB_PORT: '5433'
+      DB_NAME: taskmanager_db
+      DB_USER: taskmanager_postgres
+      STAND_API_URL: http://localhost:4000
+    steps:
+      - name: Checkout tests
+        uses: actions/checkout@v4
+
+      - name: Checkout stand
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.STAND_REPO }}
+          ref: ${{ env.STAND_REF }}
+          path: stand
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Prepare stand .env
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          DB_PASSWORD="$(openssl rand -hex 16)"
+          echo "::add-mask::$DB_PASSWORD"
+          echo "DB_PASSWORD=$DB_PASSWORD" >> "$GITHUB_ENV"
+          cat > stand/.env << ENVFILE
+          SUPABASE_URL=${SUPABASE_URL}
+          SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+          POSTGRES_USER=${DB_USER}
+          POSTGRES_PASSWORD=${DB_PASSWORD}
+          POSTGRES_DB=${DB_NAME}
+          DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
+          PORT=4000
+          FRONTEND_URL=http://localhost:3000
+          ENABLE_SWAGGER=true
+          ENVFILE
+
+      - name: Start stand (PostgreSQL + backend)
+        working-directory: stand
+        run: docker compose up -d --build postgres backend
+
+      - name: Wait for stand API
+        run: |
+          # Without authorization the API answers 401: the backend is up and ready.
+          for i in $(seq 1 60); do
+            code="$(curl -s -o /dev/null -w '%{http_code}' "$STAND_API_URL/api/tasks" || true)"
+            if [ "$code" = "401" ]; then echo "Stand is ready"; exit 0; fi
+            echo "Attempt $i: status $code, waiting..."
+            sleep 5
+          done
+          echo "Stand did not become ready in time"
+          exit 1
+
+      - name: Run stand tests
+        env:
+          STAND_USER_EMAIL: ${{ secrets.STAND_USER_EMAIL }}
+          STAND_USER_PASSWORD: ${{ secrets.STAND_USER_PASSWORD }}
+          TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
+          WRONG_PASSWORD: ${{ secrets.WRONG_PASSWORD }}
+        run: npm run test:stand
+
+      - name: Upload Playwright report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-stand
+          path: playwright-report/
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Upload test results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-stand
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Stand logs on failure
+        if: failure()
+        working-directory: stand
+        run: docker compose logs --no-color
+
+      - name: Stop stand
+        if: always()
+        working-directory: stand
+        run: docker compose down -v

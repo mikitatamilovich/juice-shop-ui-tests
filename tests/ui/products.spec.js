@@ -1,10 +1,8 @@
-const { test } = require('../src/fixtures');
-const { PRODUCT_NAME, SEARCH } = require('../config/constants');
+const { test } = require('../../src/fixtures');
+const { PRODUCT_NAME, SEARCH } = require('../../config/constants');
 
 test.beforeEach(async ({ basePage }) => {
-  await basePage.open();
-  await basePage.dismissWelcomeBanner();
-  await basePage.acceptCookies();
+  await basePage.openAndDismissPopups();
 });
 
 test('should show product cards with Add to Basket button on the main page', async ({
