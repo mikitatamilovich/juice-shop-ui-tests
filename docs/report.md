@@ -49,6 +49,8 @@ tools/               run-isolation.sh, run-workers-comparison.sh
 
 Запуск: `npx playwright test --project=ui tests/ui/basket.spec.js --retries=0`. Результат: 3 passed, 1 failed, 9.5 с. Затем файл возвращён (`git checkout`).
 
+![HTML-отчёт: упавший тест, сообщение об ошибке, скриншот](img/part1-report.png)
+
 ### Разбор падения
 
 - **Тест:** `should show added product and total price in basket` (`tests/ui/basket.spec.js:4`), в отчёте помечен красным, рядом ссылка View Trace.
@@ -56,7 +58,7 @@ tools/               run-isolation.sh, run-workers-comparison.sh
 - **Шаги в trace:** предыдущие действия выполнены успешно: клик по карточке товара, появление уведомления «Placed Apple Juice (1000ml) into basket», клик по кнопке корзины, видимая строка товара, доступная кнопка Checkout. Только последнее действие `Expect "toBeVisible" getByText('Total Price: 999.9')` заняло 5.0 с (остальные миллисекунды), то есть Playwright ждал элемент весь таймаут; во вкладке Errors одна ошибка.
 - **Снимок страницы в trace:** `http://127.0.0.1:3000/#/basket`, в корзине Apple Juice (1000ml), количество 1, цена 1.99; надпись «Total Price: 1.99». Вкладка Network показывает 61 запрос, вкладка Errors одну ошибку (ту же самую).
 
-![Скриншот страницы в момент падения (артефакт CI)](img/part1-failure.png)
+![Trace: упавший шаг и снимок страницы](img/part1-trace.png)
 
 - **Причина падения:** ожидаемая сумма в тесте (999.9) не совпадает с фактической (1.99). Подготовка данных, авторизация, добавление товара и открытие корзины работают, проблема только в значении assertion (в этом сценарии это намеренная поломка). Исправление: вернуть `EXPECTED.priceOne`.
 
