@@ -1,0 +1,91 @@
+name: Bonus - parallelism experiment
+
+# Experiment for the bonus track: compares Playwright workers on the CI runner.
+# It is not a quality gate. It runs when this file changes or manually (manual runs
+# are available after the file is in the default branch).
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/bonus-parallelism.yml'
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: '22'
+  JUICE_SHOP_IMAGE: bkimminich/juice-shop:v20.2.0
+  BASE_URL: http://localhost:3000
+  HUSKY: '0'
+  REPEATS: '3'
+
+jobs:
+  benchmark:
+    name: ${{ matrix.suite }}, workers ${{ matrix.workers }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [ui, api]
+        workers: [1, 2, 4]
+    env:
+      TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
+      WRONG_PASSWORD: ${{ secrets.WRONG_PASSWORD }}
+      REQRES_API_KEY: ${{ secrets.REQRES_API_KEY }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        if: matrix.suite == 'ui'
+        run: npx playwright install --with-deps chromium
+
+      - name: Run the suite several times
+        env:
+          SUITE: ${{ matrix.suite }}
+          WORKERS: ${{ matrix.workers }}
+        run: |
+          grep_args=()
+          if [ "$SUITE" = "api" ]; then
+            grep_args=(--grep-invert @known-defect)
+          fi
+
+          {
+            echo "### $SUITE, workers $WORKERS (runner CPUs: $(nproc))"
+            echo
+            echo "| Run | Wall time, s | Playwright time, s | Passed | Failed |"
+            echo "| --- | --- | --- | --- | --- |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          for run in $(seq 1 "$REPEATS"); do
+            docker rm -f juice-shop > /dev/null 2>&1 || true
+            docker run -d --name juice-shop -p 3000:3000 "$JUICE_SHOP_IMAGE" > /dev/null
+            curl --fail --silent --show-error \
+              --retry 30 --retry-delay 2 --retry-all-errors --max-time 5 \
+              "$BASE_URL/rest/admin/application-version" > /dev/null
+
+            start=$(date +%s)
+            PLAYWRIGHT_JSON_OUTPUT_NAME="result-$run.json" npx playwright test \
+              --project="$SUITE" "${grep_args[@]}" --workers="$WORKERS" --retries=0 \
+              --reporter=json || true
+            end=$(date +%s)
+
+            passed=$(jq '.stats.expected' "result-$run.json")
+            failed=$(jq '.stats.unexpected' "result-$run.json")
+            duration=$(jq '(.stats.duration / 1000) | floor' "result-$run.json")
+            echo "| $run | $((end - start)) | $duration | $passed | $failed |" >> "$GITHUB_STEP_SUMMARY"
+          done
+
+      - name: Show Juice Shop logs
+        if: failure()
+        run: docker logs juice-shop

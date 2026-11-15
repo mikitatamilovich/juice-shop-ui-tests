@@ -1,0 +1,220 @@
+name: CI
+
+# Learning setup: run on every push, on every Pull Request update,
+# on a schedule and manually. A real project would usually use fewer triggers.
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  schedule:
+    # Weekdays at 05:00 UTC
+    - cron: '0 5 * * 1-5'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# A new run for the same ref cancels the older one that is still running.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '22'
+  # Pin a concrete version for reproducible runs (check yours: docker images bkimminich/juice-shop).
+  JUICE_SHOP_IMAGE: bkimminich/juice-shop:v20.2.0
+  BASE_URL: http://localhost:3000
+  # Do not install Git hooks on the runner.
+  HUSKY: '0'
+
+jobs:
+  lint:
+    name: Lint and format
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: Prettier
+        run: npm run format:check
+
+  ui-tests:
+    name: UI tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
+      WRONG_PASSWORD: ${{ secrets.WRONG_PASSWORD }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Start Juice Shop
+        run: docker run -d --name juice-shop -p 3000:3000 "$JUICE_SHOP_IMAGE"
+
+      - name: Wait until Juice Shop is ready
+        run: |
+          curl --fail --silent --show-error \
+            --retry 30 --retry-delay 2 --retry-all-errors --max-time 5 \
+            "$BASE_URL/rest/admin/application-version" \
+            || { echo "::error::Juice Shop did not become ready in time"; docker logs juice-shop; exit 1; }
+
+      - name: Run UI tests
+        run: npm run test:ui
+
+      - name: Show Juice Shop logs
+        if: failure()
+        run: docker logs juice-shop
+
+      - name: Upload Playwright report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-ui
+          path: playwright-report/
+          retention-days: 14
+          if-no-files-found: warn
+
+      - name: Upload test results (screenshots, traces)
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-ui
+          path: test-results/
+          retention-days: 14
+          if-no-files-found: ignore
+
+  api-tests:
+    name: API tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
+      WRONG_PASSWORD: ${{ secrets.WRONG_PASSWORD }}
+      REQRES_API_KEY: ${{ secrets.REQRES_API_KEY }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Start Juice Shop
+        run: docker run -d --name juice-shop -p 3000:3000 "$JUICE_SHOP_IMAGE"
+
+      - name: Wait until Juice Shop is ready
+        run: |
+          curl --fail --silent --show-error \
+            --retry 30 --retry-delay 2 --retry-all-errors --max-time 5 \
+            "$BASE_URL/rest/admin/application-version" \
+            || { echo "::error::Juice Shop did not become ready in time"; docker logs juice-shop; exit 1; }
+
+      - name: Run API tests (without known defects)
+        run: npm run test:api:stable
+
+      - name: Show Juice Shop logs
+        if: failure()
+        run: docker logs juice-shop
+
+      - name: Upload Playwright report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-api
+          path: playwright-report/
+          retention-days: 14
+          if-no-files-found: warn
+
+      - name: Upload test results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-api
+          path: test-results/
+          retention-days: 14
+          if-no-files-found: ignore
+
+  # Tests for known Juice Shop defects. They assert the correct behavior, so they fail
+  # until the application is fixed. The job is visible but does not fail the workflow.
+  known-defects:
+    name: Known defects (non-blocking)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    continue-on-error: true
+    env:
+      TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
+      WRONG_PASSWORD: ${{ secrets.WRONG_PASSWORD }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Start Juice Shop
+        run: docker run -d --name juice-shop -p 3000:3000 "$JUICE_SHOP_IMAGE"
+
+      - name: Wait until Juice Shop is ready
+        run: |
+          curl --fail --silent --show-error \
+            --retry 30 --retry-delay 2 --retry-all-errors --max-time 5 \
+            "$BASE_URL/rest/admin/application-version" \
+            || { echo "::error::Juice Shop did not become ready in time"; docker logs juice-shop; exit 1; }
+
+      - name: Run known-defect tests
+        run: npm run test:api:defects
+
+      - name: Upload Playwright report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-known-defects
+          path: playwright-report/
+          retention-days: 14
+          if-no-files-found: warn
+
+      - name: Upload test results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-known-defects
+          path: test-results/
+          retention-days: 14
+          if-no-files-found: ignore

@@ -50,6 +50,29 @@ const BASKET_ITEM = {
 /** Field of the token payload that must not contain the password. */
 const PASSWORD_FIELD = 'password';
 
+/** Tag of the tests that fail because of a known defect of the application. */
+const KNOWN_DEFECT_TAG = '@known-defect';
+
+/**
+ * Builds the test details for a known defect: the tag and the description shown in the report.
+ * The test itself keeps asserting the correct behavior.
+ * @param {string} description - What is wrong in the application.
+ * @returns {{tag: string, annotation: {type: string, description: string}}} Playwright test details.
+ */
+function knownDefect(description) {
+  return { tag: KNOWN_DEFECT_TAG, annotation: { type: 'known-defect', description } };
+}
+
+/** Test details for the tests that currently fail because of defects of Juice Shop. */
+const KNOWN_DEFECT = {
+  sqlInjectionLogin: knownDefect('Login is vulnerable to SQL injection and returns 200'),
+  passwordHashInToken: knownDefect('JWT payload contains the password hash'),
+  foreignBasketRead: knownDefect('A user can read the basket of another user (200)'),
+  nonExistingProduct: knownDefect('Adding a non-existing product returns 500'),
+  negativeQuantity: knownDefect('Negative quantity is accepted (200)'),
+  zeroQuantity: knownDefect('Zero quantity is accepted (200)'),
+};
+
 /** ReqRes service used for the pagination checks. */
 const REQRES = {
   baseUrl: process.env.REQRES_BASE_URL || 'https://reqres.in',
@@ -68,5 +91,6 @@ module.exports = {
   SQL_INJECTION_EMAIL,
   BASKET_ITEM,
   PASSWORD_FIELD,
+  KNOWN_DEFECT,
   REQRES,
 };
