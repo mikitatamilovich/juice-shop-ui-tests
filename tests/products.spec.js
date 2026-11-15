@@ -1,31 +1,25 @@
-const { test } = require('@playwright/test');
-const { PRODUCT_NAME, ROUTES, SEARCH } = require('../config/constants');
-const { acceptCookies, dismissWelcomeBanner } = require('../src/utils/auth');
-const { searchProduct } = require('../src/utils/search');
-const {
-  expectFirstCardHasAddButton,
-  expectFirstCardVisible,
-  expectNoSearchResults,
-  expectProductCardShown,
-} = require('../src/utils/asserts');
+const { test } = require('../src/fixtures');
+const { PRODUCT_NAME, SEARCH } = require('../config/constants');
 
-test.beforeEach(async ({ page }) => {
-  await page.goto(ROUTES.home);
-  await dismissWelcomeBanner(page);
-  await acceptCookies(page);
+test.beforeEach(async ({ basePage }) => {
+  await basePage.open();
+  await basePage.dismissWelcomeBanner();
+  await basePage.acceptCookies();
 });
 
-test('should show product cards with Add to Basket button on the main page', async ({ page }) => {
-  await expectFirstCardVisible(page);
-  await expectFirstCardHasAddButton(page);
+test('should show product cards with Add to Basket button on the main page', async ({
+  productsPage,
+}) => {
+  await productsPage.expectFirstCardVisible();
+  await productsPage.expectFirstCardHasAddButton();
 });
 
-test('should show matching product for existing search query', async ({ page }) => {
-  await searchProduct(page, SEARCH.existingQuery);
-  await expectProductCardShown(page, PRODUCT_NAME);
+test('should show matching product for existing search query', async ({ productsPage }) => {
+  await productsPage.search(SEARCH.existingQuery);
+  await productsPage.expectProductShown(PRODUCT_NAME);
 });
 
-test('should show no results message for missing search query', async ({ page }) => {
-  await searchProduct(page, SEARCH.missingQuery);
-  await expectNoSearchResults(page);
+test('should show no results message for missing search query', async ({ productsPage }) => {
+  await productsPage.search(SEARCH.missingQuery);
+  await productsPage.expectNoResults();
 });
