@@ -1,0 +1,133 @@
+@baseUrl = http://localhost:3000
+@password = Recon12345!
+@emailA = recon.c@example.com
+@emailB = recon.d@example.com
+@tokenA = {{loginA.response.body.$.authentication.token}}
+@bidA = {{loginA.response.body.$.authentication.bid}}
+@tokenB = {{loginB.response.body.$.authentication.token}}
+@bidB = {{loginB.response.body.$.authentication.bid}}
+@itemId = {{addItem.response.body.$.data.id}}
+@productId = 1
+@reqresKey =
+
+### 01 Register user A
+POST {{baseUrl}}/api/Users
+Content-Type: application/json
+
+{"email":"{{emailA}}","password":"{{password}}","passwordRepeat":"{{password}}"}
+
+### 02 Register user B
+POST {{baseUrl}}/api/Users
+Content-Type: application/json
+
+{"email":"{{emailB}}","password":"{{password}}","passwordRepeat":"{{password}}"}
+
+### 03 Login A (valid)
+# @name loginA
+POST {{baseUrl}}/rest/user/login
+Content-Type: application/json
+
+{"email":"{{emailA}}","password":"{{password}}"}
+
+### 04 Login B (valid)
+# @name loginB
+POST {{baseUrl}}/rest/user/login
+Content-Type: application/json
+
+{"email":"{{emailB}}","password":"{{password}}"}
+
+### 05 Login with wrong password
+POST {{baseUrl}}/rest/user/login
+Content-Type: application/json
+
+{"email":"{{emailA}}","password":"WrongPass999!"}
+
+### 06 Login with non-existing email
+POST {{baseUrl}}/rest/user/login
+Content-Type: application/json
+
+{"email":"nobody.recon@example.com","password":"{{password}}"}
+
+### 07 Login with empty email
+POST {{baseUrl}}/rest/user/login
+Content-Type: application/json
+
+{"email":"","password":"{{password}}"}
+
+### 08 Login with empty password
+POST {{baseUrl}}/rest/user/login
+Content-Type: application/json
+
+{"email":"{{emailA}}","password":""}
+
+### 09 Get basket A without token
+GET {{baseUrl}}/rest/basket/{{bidA}}
+
+### 10 Get basket A with token A (own)
+GET {{baseUrl}}/rest/basket/{{bidA}}
+Authorization: Bearer {{tokenA}}
+
+### 11 Get basket B with token A (foreign basket)
+GET {{baseUrl}}/rest/basket/{{bidB}}
+Authorization: Bearer {{tokenA}}
+
+### 12 Search Apple
+GET {{baseUrl}}/rest/products/search?q=Apple
+
+### 13 Search without matches
+GET {{baseUrl}}/rest/products/search?q=qwertyxyz
+
+### 14 Search with empty query
+GET {{baseUrl}}/rest/products/search?q=
+
+### 15 Add item without token
+POST {{baseUrl}}/api/BasketItems
+Content-Type: application/json
+
+{"ProductId":{{productId}},"BasketId":{{bidA}},"quantity":1}
+
+### 16 Add item with non-existing ProductId
+POST {{baseUrl}}/api/BasketItems
+Content-Type: application/json
+Authorization: Bearer {{tokenA}}
+
+{"ProductId":999999,"BasketId":{{bidA}},"quantity":1}
+
+### 17 Add item with negative quantity
+POST {{baseUrl}}/api/BasketItems
+Content-Type: application/json
+Authorization: Bearer {{tokenA}}
+
+{"ProductId":{{productId}},"BasketId":{{bidA}},"quantity":-1}
+
+### 18 Basket A after negative requests
+GET {{baseUrl}}/rest/basket/{{bidA}}
+Authorization: Bearer {{tokenA}}
+
+### 19 Add item (valid)
+# @name addItem
+POST {{baseUrl}}/api/BasketItems
+Content-Type: application/json
+Authorization: Bearer {{tokenA}}
+
+{"ProductId":{{productId}},"BasketId":{{bidA}},"quantity":1}
+
+### 20 Basket A after valid add
+GET {{baseUrl}}/rest/basket/{{bidA}}
+Authorization: Bearer {{tokenA}}
+
+### 21 Delete the added item
+DELETE {{baseUrl}}/api/BasketItems/{{itemId}}
+Authorization: Bearer {{tokenA}}
+
+### 22 Basket A after delete
+GET {{baseUrl}}/rest/basket/{{bidA}}
+Authorization: Bearer {{tokenA}}
+
+### 23 ReqRes page 1
+GET https://reqres.in/api/users?page=1
+x-api-key: {{reqresKey}}
+
+### 24 ReqRes page 2
+GET https://reqres.in/api/users?page=2
+x-api-key: {{reqresKey}}

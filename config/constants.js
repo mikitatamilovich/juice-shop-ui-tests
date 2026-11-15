@@ -33,16 +33,6 @@ const TIMEOUTS = {
   expect: 5000,
 };
 
-/** API endpoints. */
-const API_PATHS = {
-  users: '/api/Users',
-};
-
-/** HTTP status codes used in checks. */
-const HTTP_STATUS = {
-  created: 201,
-};
-
 /** CSS selectors, used only for elements without an accessible name in Angular Material. */
 const SELECTORS = {
   /** The search input has no accessible name (role "textbox" is ambiguous). */
@@ -71,11 +61,12 @@ const UI_TEXT = {
   totalPriceLabel: 'Total Price: ',
 };
 
-/** Expected messages shown by the application. */
+/** Expected messages shown by the application (UI) and returned by the API. */
 const MESSAGES = {
   invalidLogin: 'Invalid email or password.',
   emptyEmail: 'Please provide an email address.',
   noResults: 'No results found',
+  noAuthHeader: 'No Authorization header was found',
   /**
    * Builds the snack-bar text shown after a product is added for the first time.
    * @param {string} productName - Name of the added product.
@@ -90,10 +81,12 @@ const MESSAGES = {
   productAddedAgain: (productName) => `Added another ${productName} to basket`,
 };
 
-/** Search scenario data. */
+/** Search scenario data (UI and API). */
 const SEARCH = {
   existingQuery: 'Apple',
   missingQuery: 'qwertyxyz',
+  lowerCaseQuery: 'apple',
+  specialCharQuery: "'",
 };
 
 /** Expected totals for the basket scenarios (the currency symbol is added by the app). */
@@ -129,8 +122,6 @@ module.exports = {
   TEST_EMAIL,
   ROUTES,
   TIMEOUTS,
-  API_PATHS,
-  HTTP_STATUS,
   SELECTORS,
   UI_TEXT,
   MESSAGES,

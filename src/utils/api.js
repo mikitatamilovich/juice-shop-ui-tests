@@ -1,10 +1,6 @@
 const { randomUUID } = require('node:crypto');
-const {
-  API_PATHS,
-  HTTP_STATUS,
-  TEST_EMAIL,
-  TEST_USER_PASSWORD,
-} = require('../../config/constants');
+const { API_ENDPOINTS, API_STATUS } = require('../../config/api.constants');
+const { TEST_EMAIL, TEST_USER_PASSWORD } = require('../../config/constants');
 const { NetworkError } = require('./errors');
 const { requireValue } = require('./validate');
 
@@ -30,10 +26,10 @@ async function registerUser(request, email, password) {
   requireValue(email, 'Email');
   requireValue(password, 'Password');
 
-  const response = await request.post(API_PATHS.users, {
+  const response = await request.post(API_ENDPOINTS.users, {
     data: { email, password, passwordRepeat: password },
   });
-  if (response.status() !== HTTP_STATUS.created) {
+  if (response.status() !== API_STATUS.created) {
     const body = await response.text();
     throw new NetworkError(`User registration failed: ${body}`, response.status());
   }
