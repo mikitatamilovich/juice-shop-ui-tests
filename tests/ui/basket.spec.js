@@ -1,5 +1,5 @@
-const { authenticatedTest: test } = require('../src/fixtures');
-const { EXPECTED, PRODUCT_NAME } = require('../config/constants');
+const { authenticatedTest: test } = require('../../src/fixtures');
+const { EXPECTED, PRODUCT_NAME } = require('../../config/constants');
 
 test('should show added product and total price in basket', async ({
   productsPage,

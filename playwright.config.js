@@ -1,5 +1,7 @@
 const { defineConfig, devices } = require('@playwright/test');
+require('dotenv').config({ quiet: true });
 const { BASE_URL, TIMEOUTS } = require('./config/constants');
+const { STAND } = require('./config/stand.constants');
 
 const isCI = Boolean(process.env.CI);
 
@@ -18,7 +20,26 @@ module.exports = defineConfig({
     screenshot: 'only-on-failure',
   },
   projects: [
-    { name: 'ui', testIgnore: '**/api/**', use: { ...devices['Desktop Chrome'] } },
-    { name: 'api', testMatch: '**/api/**/*.spec.js' },
+    {
+      name: 'ui',
+      testDir: './tests/ui',
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: BASE_URL,
+        screenshot: 'only-on-failure',
+        trace: 'retain-on-failure',
+      },
+    },
+    {
+      name: 'api',
+      testDir: './tests/api',
+      testMatch: '**/*.spec.js',
+      use: { baseURL: BASE_URL },
+    },
+    {
+      name: 'stand',
+      testDir: './tests/stand',
+      use: { baseURL: STAND.apiUrl },
+    },
   ],
 });

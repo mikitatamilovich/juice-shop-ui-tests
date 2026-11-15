@@ -24,6 +24,16 @@ class BasePage {
   }
 
   /**
+   * Opens the home page and closes the welcome banner and the cookie message.
+   * @returns {Promise<void>} Resolves when both popups are closed.
+   */
+  async openAndDismissPopups() {
+    await this.open();
+    await this.dismissWelcomeBanner();
+    await this.acceptCookies();
+  }
+
+  /**
    * Reloads the current page.
    * @returns {Promise<void>} Resolves when the page is reloaded.
    */

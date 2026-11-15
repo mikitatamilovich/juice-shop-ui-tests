@@ -38,9 +38,7 @@ const test = base.test.extend({
 const authenticatedTest = test.extend({
   authenticatedPage: [
     async ({ page, basePage, loginPage, testUser }, use) => {
-      await basePage.open();
-      await basePage.dismissWelcomeBanner();
-      await basePage.acceptCookies();
+      await basePage.openAndDismissPopups();
       await loginPage.login(testUser.email, testUser.password);
       await use(page);
     },

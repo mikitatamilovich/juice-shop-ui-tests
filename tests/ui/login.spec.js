@@ -1,11 +1,11 @@
-const { test } = require('../src/fixtures');
+const { test } = require('../../src/fixtures');
 const {
   EMPTY_VALUE,
   INPUT_TYPE,
   TEST_USER_PASSWORD,
   WRONG_PASSWORD,
-} = require('../config/constants');
-const { buildUniqueEmail } = require('../src/utils/api');
+} = require('../../config/constants');
+const { buildUniqueEmail } = require('../../src/utils/api');
 
 /** Credentials that must be rejected by the application. */
 const INVALID_LOGIN_CASES = [
@@ -14,9 +14,7 @@ const INVALID_LOGIN_CASES = [
 ];
 
 test.beforeEach(async ({ basePage }) => {
-  await basePage.open();
-  await basePage.dismissWelcomeBanner();
-  await basePage.acceptCookies();
+  await basePage.openAndDismissPopups();
 });
 
 test('should log in with valid credentials', async ({ loginPage, testUser }) => {

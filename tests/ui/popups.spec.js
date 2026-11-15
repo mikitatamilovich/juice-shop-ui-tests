@@ -1,4 +1,4 @@
-const { test } = require('../src/fixtures');
+const { test } = require('../../src/fixtures');
 
 test.beforeEach(async ({ basePage }) => {
   await basePage.open();
